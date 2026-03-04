@@ -9,7 +9,7 @@ import { ThermalChart } from '@/components/charts/ThermalChart';
 import { FrictionCircleChart } from '@/components/charts/FrictionCircleChart';
 import { useSessionStore } from '@/lib/sessionStore';
 import React from 'react';
-
+import trackPhoto from "@/assets/trackPhoto";
 export default function App() {
   const store = useSessionStore();
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -21,7 +21,7 @@ export default function App() {
         <div
           className="absolute inset-0 bg-cover bg-center"
           style={{
-            backgroundImage: 'url(/m3-dashboard/m3-track.jpg)',
+            backgroundImage: `url(${trackPhoto})`,
             backgroundPosition: 'center 40%',
             filter: 'brightness(0.18) saturate(0.6)',
           }}
@@ -49,7 +49,7 @@ export default function App() {
       <div className="flex" style={{ height: 'calc(100vh - 57px)' }}>
         {sidebarOpen && (
           <aside className="w-72 shrink-0 border-r border-slate-800 bg-slate-900/40 flex flex-col gap-4 p-4 overflow-y-auto relative">
-          <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-32" style={{backgroundImage:"url(/m3-dashboard/m3-track.jpg)",backgroundSize:"cover",backgroundPosition:"center 50%",opacity:0.07,maskImage:"linear-gradient(to bottom, transparent, black)",WebkitMaskImage:"linear-gradient(to bottom, transparent, black)"}} />
+          <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-32" style={{backgroundImage:`url(${trackPhoto})`,backgroundSize:"cover",backgroundPosition:"center 50%",opacity:0.07,maskImage:"linear-gradient(to bottom, transparent, black)",WebkitMaskImage:"linear-gradient(to bottom, transparent, black)"}} />
             <DropZone onSessionLoaded={store.addSession} />
             <SessionList
               sessions={store.sessions}
