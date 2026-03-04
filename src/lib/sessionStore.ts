@@ -1,6 +1,8 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import type { LoadedSession, SessionSummary } from '@/types/session';
 import { makeSessionId, assignSessionColor, isValidSession } from '@/lib/utils';
+
+const STORAGE_KEY = 'm3-sessions-v1';
 
 export interface SessionStore {
   sessions: LoadedSession[];
@@ -8,13 +10,44 @@ export interface SessionStore {
   addSession: (filename: string, data: SessionSummary) => { ok: boolean; error?: string };
   removeSession: (id: string) => void;
   toggleActive: (id: string) => void;
+  renameSession: (id: string, label: string) => void;
   clearAll: () => void;
   activeSessions: LoadedSession[];
 }
 
 export function useSessionStore(): SessionStore {
-  const [sessions, setSessions] = useState<LoadedSession[]>([]);
-  const [activeSessionIds, setActiveSessionIds] = useState<Set<string>>(new Set());
+  const [sessions, setSessions] = useState<LoadedSession[]>(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return [];
+      const parsed = JSON.parse(raw) as { sessions?: LoadedSession[] };
+      return Array.isArray(parsed.sessions) ? parsed.sessions : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const [activeSessionIds, setActiveSessionIds] = useState<Set<string>>(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return new Set();
+      const parsed = JSON.parse(raw) as { activeIds?: string[] };
+      return new Set(Array.isArray(parsed.activeIds) ? parsed.activeIds : []);
+    } catch {
+      return new Set();
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        sessions,
+        activeIds: [...activeSessionIds],
+      }));
+    } catch {
+      // storage quota exceeded or unavailable
+    }
+  }, [sessions, activeSessionIds]);
 
   const addSession = useCallback((filename: string, data: unknown): { ok: boolean; error?: string } => {
     if (!isValidSession(data)) {
@@ -57,6 +90,12 @@ export function useSessionStore(): SessionStore {
     });
   }, []);
 
+  const renameSession = useCallback((id: string, label: string) => {
+    setSessions(prev => prev.map(s =>
+      s.id === id ? { ...s, label: label.trim() || undefined } : s
+    ));
+  }, []);
+
   const clearAll = useCallback(() => {
     setSessions([]);
     setActiveSessionIds(new Set());
@@ -64,5 +103,5 @@ export function useSessionStore(): SessionStore {
 
   const activeSessions = sessions.filter(s => activeSessionIds.has(s.id));
 
-  return { sessions, activeSessionIds, addSession, removeSession, toggleActive, clearAll, activeSessions };
+  return { sessions, activeSessionIds, addSession, removeSession, toggleActive, renameSession, clearAll, activeSessions };
 }

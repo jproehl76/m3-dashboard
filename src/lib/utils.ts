@@ -88,6 +88,7 @@ export function consistencyRating(spreadSeconds: number): { label: string; color
 }
 
 export function sessionLabel(session: LoadedSession): string {
+  if (session.label) return session.label;
   const d = new Date(session.data.header.date);
   const dateStr = isNaN(d.getTime())
     ? session.data.header.date

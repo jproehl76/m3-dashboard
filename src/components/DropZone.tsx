@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
 import { Upload, FileJson } from 'lucide-react';
+import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import type { SessionSummary } from '@/types/session';
 
@@ -9,14 +10,10 @@ interface DropZoneProps {
 
 export function DropZone({ onSessionLoaded }: DropZoneProps) {
   const [isDragging, setIsDragging] = useState(false);
-  const [status, setStatus] = useState<{ type: 'idle' | 'success' | 'error'; message: string }>({
-    type: 'idle',
-    message: '',
-  });
 
   const processFile = useCallback((file: File) => {
     if (!file.name.endsWith('.json')) {
-      setStatus({ type: 'error', message: `"${file.name}" is not a JSON file.` });
+      toast.error(`"${file.name}" is not a JSON file.`);
       return;
     }
 
@@ -26,14 +23,13 @@ export function DropZone({ onSessionLoaded }: DropZoneProps) {
         const parsed = JSON.parse(e.target?.result as string);
         const result = onSessionLoaded(file.name, parsed);
         if (result.ok) {
-          setStatus({ type: 'success', message: `Loaded: ${file.name}` });
+          toast.success(`Loaded: ${file.name}`);
         } else {
-          setStatus({ type: 'error', message: result.error ?? 'Unknown error.' });
+          toast.error(result.error ?? 'Unknown error.');
         }
       } catch {
-        setStatus({ type: 'error', message: `Could not parse "${file.name}" as JSON.` });
+        toast.error(`Could not parse "${file.name}" as JSON.`);
       }
-      setTimeout(() => setStatus({ type: 'idle', message: '' }), 3000);
     };
     reader.readAsText(file);
   }, [onSessionLoaded]);
@@ -68,25 +64,14 @@ export function DropZone({ onSessionLoaded }: DropZoneProps) {
         className="sr-only"
         onChange={onInputChange}
       />
-      {status.type === 'idle' ? (
-        <>
-          <div className="flex items-center gap-2 text-slate-400">
-            <Upload size={20} />
-            <FileJson size={20} />
-          </div>
-          <p className="text-sm text-slate-400 text-center">
-            Drop session JSON files here or <span className="text-blue-400 underline">click to browse</span>
-          </p>
-          <p className="text-xs text-slate-600">Multiple files supported</p>
-        </>
-      ) : (
-        <p className={cn(
-          'text-sm font-medium text-center',
-          status.type === 'success' ? 'text-emerald-400' : 'text-red-400'
-        )}>
-          {status.message}
-        </p>
-      )}
+      <div className="flex items-center gap-2 text-slate-400">
+        <Upload size={20} />
+        <FileJson size={20} />
+      </div>
+      <p className="text-sm text-slate-400 text-center">
+        Drop session JSON files here or <span className="text-blue-400 underline">click to browse</span>
+      </p>
+      <p className="text-xs text-slate-600">Multiple files supported</p>
     </label>
   );
 }

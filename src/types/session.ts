@@ -114,6 +114,7 @@ export interface LoadedSession {
   id: string;           // unique key: track + date
   filename: string;
   color: string;        // assigned chart color
+  label?: string;       // user-defined display name
   data: SessionSummary;
 }
 
