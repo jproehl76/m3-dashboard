@@ -9,7 +9,7 @@ import { ThermalChart } from '@/components/charts/ThermalChart';
 import { FrictionCircleChart } from '@/components/charts/FrictionCircleChart';
 import { useSessionStore } from '@/lib/sessionStore';
 import React from 'react';
-const trackPhoto = `${import.meta.env.BASE_URL}m3-track.jpg`;
+import trackPhoto from '@/assets/m3-track.jpg';
 export default function App() {
   const store = useSessionStore();
   const [sidebarOpen, setSidebarOpen] = useState(true);
