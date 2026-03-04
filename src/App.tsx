@@ -15,20 +15,18 @@ export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans">
-      <header className="border-b border-slate-800 sticky top-0 z-10 overflow-hidden relative">
-        {/* Photo strip — subtle, darkened, motion blur visible */}
-        <img
-          src={trackPhoto}
-          alt=""
-          aria-hidden="true"
-          className="absolute inset-0 w-full h-full object-cover"
-          style={{ objectPosition: 'center 40%', filter: 'brightness(0.55) saturate(0.8)' }}
-        />
-        {/* Gradient overlay — fades photo into dark on right */}
-        <div className="absolute inset-0 bg-gradient-to-r from-slate-950/50 via-slate-950/20 to-slate-950/60" />
+    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans relative">
+      {/* Full-page watermark */}
+      <img
+        src={trackPhoto}
+        alt=""
+        aria-hidden="true"
+        className="fixed inset-0 w-full h-full object-cover pointer-events-none"
+        style={{ objectPosition: 'center 40%', filter: 'brightness(0.55) saturate(0.8)', opacity: 0.18, zIndex: 0 }}
+      />
+      <header className="border-b border-slate-800 sticky top-0 z-10 relative">
         {/* Content */}
-        <div className="relative flex items-center justify-between px-6 py-3">
+        <div className="flex items-center justify-between px-6 py-3">
           <div className="flex items-center gap-3">
             <div className="h-6 w-1 rounded-full bg-blue-500" />
             <div>
@@ -48,7 +46,6 @@ export default function App() {
       <div className="flex" style={{ height: 'calc(100vh - 57px)' }}>
         {sidebarOpen && (
           <aside className="w-72 shrink-0 border-r border-slate-800 bg-slate-900/40 flex flex-col gap-4 p-4 overflow-y-auto relative">
-          <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-32" style={{backgroundImage:`url(${trackPhoto})`,backgroundSize:"cover",backgroundPosition:"center 50%",opacity:0.07,maskImage:"linear-gradient(to bottom, transparent, black)",WebkitMaskImage:"linear-gradient(to bottom, transparent, black)"}} />
             <DropZone onSessionLoaded={store.addSession} />
             <SessionList
               sessions={store.sessions}
