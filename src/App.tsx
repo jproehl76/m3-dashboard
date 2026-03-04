@@ -16,7 +16,7 @@ export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans relative">
+    <div className="h-screen bg-slate-950 text-slate-100 font-sans relative flex flex-col">
       {/* Full-page watermark */}
       <img
         src={trackPhoto}
@@ -52,7 +52,7 @@ export default function App() {
         </div>
       </header>
 
-      <div className="flex" style={{ height: 'calc(100vh - 57px)' }}>
+      <div className="flex flex-1 min-h-0">
         {sidebarOpen && (
           <aside className="w-72 shrink-0 border-r border-slate-800 bg-slate-900/40 flex flex-col gap-4 p-4 overflow-y-auto relative">
             <DropZone onSessionLoaded={store.addSession} />
