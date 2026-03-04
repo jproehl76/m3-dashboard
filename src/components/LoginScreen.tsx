@@ -1,4 +1,4 @@
-import { GoogleLogin } from '@react-oauth/google';
+import { useGoogleOneTapLogin, GoogleLogin } from '@react-oauth/google';
 import { jwtDecode } from 'jwt-decode';
 import bmwMLogo from '@/assets/bmw-m-logo.jpg';
 import trackPhoto from '@/assets/m3-track.jpg';
@@ -15,7 +15,21 @@ interface LoginScreenProps {
   onAuth: (user: { email: string; name: string; picture: string }) => void;
 }
 
+function handleCredential(credential: string, onAuth: LoginScreenProps['onAuth']) {
+  const decoded = jwtDecode<GoogleJwt>(credential);
+  if (decoded.email !== ALLOWED_EMAIL) return;
+  onAuth({ email: decoded.email, name: decoded.name, picture: decoded.picture });
+}
+
 export function LoginScreen({ onAuth }: LoginScreenProps) {
+  // One Tap — auto-prompts if already signed into Google in the browser
+  useGoogleOneTapLogin({
+    onSuccess: (response) => {
+      if (response.credential) handleCredential(response.credential, onAuth);
+    },
+    onError: () => {},
+  });
+
   return (
     <div className="relative h-screen flex flex-col items-center justify-center bg-slate-950 text-slate-100">
       <img
@@ -40,18 +54,13 @@ export function LoginScreen({ onAuth }: LoginScreenProps) {
           <p className="text-sm text-slate-400">Sign in to access your data</p>
           <GoogleLogin
             onSuccess={(response) => {
-              if (!response.credential) return;
-              const decoded = jwtDecode<GoogleJwt>(response.credential);
-              if (decoded.email !== ALLOWED_EMAIL) {
-                alert('Access denied.');
-                return;
-              }
-              onAuth({ email: decoded.email, name: decoded.name, picture: decoded.picture });
+              if (response.credential) handleCredential(response.credential, onAuth);
             }}
-            onError={() => console.error('Google sign-in failed')}
+            onError={() => {}}
             theme="filled_black"
             shape="rectangular"
             size="large"
+            useOneTap={false}
           />
         </div>
       </div>
