@@ -9,7 +9,7 @@ import { ThermalChart } from '@/components/charts/ThermalChart';
 import { FrictionCircleChart } from '@/components/charts/FrictionCircleChart';
 import { useSessionStore } from '@/lib/sessionStore';
 import React from 'react';
-import trackPhoto from "@/assets/trackPhoto";
+const trackPhoto = `${import.meta.env.BASE_URL}m3-track.jpg`;
 export default function App() {
   const store = useSessionStore();
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -22,8 +22,8 @@ export default function App() {
           src={trackPhoto}
           alt=""
           aria-hidden="true"
-          className="absolute inset-0 w-full h-full object-cover object-[center_40%]"
-          style={{ filter: 'brightness(0.35) saturate(0.7)' }}
+          className="absolute inset-0 w-full h-full object-cover"
+          style={{ objectPosition: 'center 40%', filter: 'brightness(0.35) saturate(0.7)' }}
         />
         {/* Gradient overlay — fades photo into dark on right */}
         <div className="absolute inset-0 bg-gradient-to-r from-slate-950/60 via-slate-950/40 to-slate-950/80" />
