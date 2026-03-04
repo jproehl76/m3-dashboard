@@ -18,13 +18,12 @@ export default function App() {
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans">
       <header className="border-b border-slate-800 sticky top-0 z-10 overflow-hidden relative">
         {/* Photo strip — subtle, darkened, motion blur visible */}
-        <div
-          className="absolute inset-0 bg-cover bg-center w-full h-full"
-          style={{
-            backgroundImage: `url(${trackPhoto})`,
-            backgroundPosition: 'center 40%',
-            filter: 'brightness(0.35) saturate(0.7)',
-          }}
+        <img
+          src={trackPhoto}
+          alt=""
+          aria-hidden="true"
+          className="absolute inset-0 w-full h-full object-cover object-[center_40%]"
+          style={{ filter: 'brightness(0.35) saturate(0.7)' }}
         />
         {/* Gradient overlay — fades photo into dark on right */}
         <div className="absolute inset-0 bg-gradient-to-r from-slate-950/60 via-slate-950/40 to-slate-950/80" />
