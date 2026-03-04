@@ -10,6 +10,7 @@ import { FrictionCircleChart } from '@/components/charts/FrictionCircleChart';
 import { useSessionStore } from '@/lib/sessionStore';
 import React from 'react';
 import trackPhoto from '@/assets/m3-track.jpg';
+import bmwMLogo from '@/assets/bmw-m-logo.jpg';
 export default function App() {
   const store = useSessionStore();
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -34,12 +35,20 @@ export default function App() {
               <p className="text-xs text-slate-400">2025 BMW G80 M3 Competition xDrive · #358</p>
             </div>
           </div>
-          <button
-            onClick={() => setSidebarOpen((p: boolean) => !p)}
-            className="text-xs text-slate-400 hover:text-slate-100 transition-colors px-2 py-1 rounded border border-slate-700 hover:border-slate-500 bg-slate-950/50"
-          >
-            {sidebarOpen ? 'Hide sidebar' : 'Show sidebar'}
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setSidebarOpen((p: boolean) => !p)}
+              className="text-xs text-slate-400 hover:text-slate-100 transition-colors px-2 py-1 rounded border border-slate-700 hover:border-slate-500 bg-slate-950/50"
+            >
+              {sidebarOpen ? 'Hide sidebar' : 'Show sidebar'}
+            </button>
+            <img
+              src={bmwMLogo}
+              alt="BMW M"
+              className="h-10 w-10"
+              style={{ mixBlendMode: 'screen' }}
+            />
+          </div>
         </div>
       </header>
 
