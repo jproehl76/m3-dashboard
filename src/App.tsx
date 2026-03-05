@@ -137,22 +137,24 @@ export default function App() {
       );
       case 'corners': return (
         <div className="space-y-3">
-          {/* Row 1: side-by-side charts */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+          {/* Row 1: Corner Apex Speeds — taller, constrained width */}
+          <div className="max-w-2xl">
             <Section title="Corner Apex Speeds">
               <ErrorBoundary><CornerSpeedChart sessions={store.activeSessions} /></ErrorBoundary>
+            </Section>
+          </div>
+          {/* Row 2: Friction Circle + G-Force Envelope side by side */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+            <Section title="Friction Circle">
+              <ErrorBoundary><FrictionScatterChart sessions={store.activeSessions} /></ErrorBoundary>
             </Section>
             <Section title="G-Force Envelope">
               <ErrorBoundary><FrictionCircleChart sessions={store.activeSessions} /></ErrorBoundary>
             </Section>
           </div>
-          {/* Row 2: corner detail table — needs full width for columns */}
+          {/* Row 3: corner detail table — full width for columns */}
           <Section title="Corner Detail">
             <ErrorBoundary><CornerDetailTable sessions={store.activeSessions} /></ErrorBoundary>
-          </Section>
-          {/* Row 3: friction scatter */}
-          <Section title="Friction Circle">
-            <ErrorBoundary><FrictionScatterChart sessions={store.activeSessions} /></ErrorBoundary>
           </Section>
         </div>
       );
@@ -188,7 +190,7 @@ export default function App() {
       <Toaster position="bottom-right" richColors />
 
       {/* ── HEADER ── */}
-      <header className="relative shrink-0 overflow-hidden" style={{ height: 'clamp(60px, 11vh, 120px)' }}>
+      <header className="relative shrink-0 overflow-hidden" style={{ height: 'clamp(72px, 13.2vh, 144px)' }}>
         {/* CSS motorsport background — adapts to track colors */}
         <div className="absolute inset-0" style={{
           background: `
@@ -214,14 +216,14 @@ export default function App() {
 
         <div className="relative z-10 flex items-center h-full px-4 gap-3">
           {/* BMW M stripes */}
-          <div className="shrink-0 flex items-center gap-[3px]" style={{ height: 'clamp(24px, 4.5vh, 42px)' }}>
+          <div className="shrink-0 flex items-center gap-[3px]" style={{ height: 'clamp(29px, 5.4vh, 50px)' }}>
             {[
               { color: '#1C69D4', shadow: '#1C69D460' },
               { color: '#6B2D9E', shadow: '#6B2D9E60' },
               { color: '#EF3340', shadow: '#EF334060' },
             ].map((stripe, i) => (
               <div key={i} style={{
-                width: 'clamp(4px, 0.7vh, 7px)',
+                width: 'clamp(5px, 0.84vh, 8px)',
                 height: '100%',
                 background: stripe.color,
                 borderRadius: '1px',
@@ -234,7 +236,7 @@ export default function App() {
           <div className="flex flex-col justify-center min-w-0">
             <h1 style={{
               fontFamily: 'BMWTypeNext',
-              fontSize: 'clamp(14px, 2.5vh, 26px)',
+              fontSize: 'clamp(17px, 3vh, 31px)',
               fontWeight: 700,
               letterSpacing: '0.08em',
               color: '#F0F0FA',
@@ -245,7 +247,7 @@ export default function App() {
             </h1>
             <p className="hidden sm:block" style={{
               fontFamily: 'BMWTypeNext',
-              fontSize: 'clamp(7px, 1.1vh, 10px)',
+              fontSize: 'clamp(9px, 1.32vh, 12px)',
               letterSpacing: '0.22em',
               color: 'hsl(var(--muted-foreground))',
               textTransform: 'uppercase',
@@ -260,7 +262,7 @@ export default function App() {
             <div className="hidden md:flex flex-col items-center absolute left-1/2 -translate-x-1/2">
               <span style={{
                 fontFamily: 'JetBrains Mono',
-                fontSize: 'clamp(18px, 3.5vh, 32px)',
+                fontSize: 'clamp(22px, 4.2vh, 38px)',
                 fontWeight: 600,
                 color: '#A855F7',
                 lineHeight: 1,
@@ -270,7 +272,7 @@ export default function App() {
               </span>
               <span style={{
                 fontFamily: 'BMWTypeNext',
-                fontSize: 'clamp(7px, 0.9vh, 9px)',
+                fontSize: 'clamp(9px, 1.08vh, 11px)',
                 letterSpacing: '0.25em',
                 color: 'hsl(var(--muted-foreground))',
                 textTransform: 'uppercase',
@@ -287,18 +289,18 @@ export default function App() {
               <img src={trackLogo} alt={activeTrackLayout?.name}
                 className="hidden sm:block object-contain"
                 style={{
-                  height: 'clamp(36px, 7vh, 72px)',
-                  maxWidth: 200,
+                  height: 'clamp(43px, 8.4vh, 86px)',
+                  maxWidth: 240,
                   opacity: 0.92,
                   filter: 'brightness(1.25) drop-shadow(0 0 12px rgba(255,255,255,0.15))',
                 }} />
             )}
             {user.picture && (
               <img src={user.picture} alt={user.name} className="rounded-full ring-1 ring-border"
-                style={{ width: 'clamp(20px, 3vh, 26px)', height: 'clamp(20px, 3vh, 26px)' }} />
+                style={{ width: 'clamp(24px, 3.6vh, 31px)', height: 'clamp(24px, 3.6vh, 31px)' }} />
             )}
             <button onClick={() => setUser(null)} className="text-muted-foreground hover:text-destructive transition-colors" title="Sign out">
-              <LogOut size={14} />
+              <LogOut size={17} />
             </button>
           </div>
         </div>
