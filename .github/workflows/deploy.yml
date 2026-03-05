@@ -39,6 +39,8 @@ jobs:
         run: pnpm build
         env:
           VITE_GOOGLE_CLIENT_ID: ${{ secrets.VITE_GOOGLE_CLIENT_ID }}
+          VITE_WHOOP_CLIENT_ID: ${{ secrets.VITE_WHOOP_CLIENT_ID }}
+          VITE_WHOOP_CLIENT_SECRET: ${{ secrets.VITE_WHOOP_CLIENT_SECRET }}
 
       - uses: actions/configure-pages@v5
 

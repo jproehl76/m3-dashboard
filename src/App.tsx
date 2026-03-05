@@ -20,6 +20,8 @@ import { DebriefNotes } from '@/components/DebriefNotes';
 import { CoachingInsights } from '@/components/CoachingInsights';
 import { DrivePickerButton } from '@/components/DrivePickerButton';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { WhoopPanel } from '@/components/WhoopPanel';
+import { handleWhoopCallback } from '@/lib/services/whoopAuth';
 import { usePersistedSessions } from '@/lib/usePersistedSessions';
 import { sessionLabel } from '@/lib/utils';
 import React from 'react';
@@ -46,6 +48,18 @@ export default function App() {
       return null;
     }
   });
+
+  // Handle WHOOP OAuth callback — must run before the login check
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get('code');
+    const state = params.get('state');
+    if (code && state) {
+      // Clear the URL params without reloading
+      window.history.replaceState({}, '', window.location.pathname);
+      handleWhoopCallback(code, state).catch(() => {});
+    }
+  }, []);
 
   useEffect(() => {
     if (user) {
@@ -190,6 +204,11 @@ export default function App() {
                 <ErrorBoundary>
                   <Section title="Session Summary">
                     <SessionStats sessions={store.activeSessions} />
+                  </Section>
+                </ErrorBoundary>
+                <ErrorBoundary>
+                  <Section title="WHOOP Recovery">
+                    <WhoopPanel sessionDates={store.activeSessions.map(s => s.data.header.date)} />
                   </Section>
                 </ErrorBoundary>
                 <ErrorBoundary>
