@@ -16,24 +16,19 @@ interface RadarPoint {
 }
 
 function buildRadarData(sessions: LoadedSession[]): RadarPoint[] {
-  const metrics: Array<{ key: keyof typeof sessions[0]['data']['friction_circle'] | 'consistency'; label: string; scale: number }> = [
-    { key: 'total_g_p95', label: 'G-Force P95', scale: 2 },
-    { key: 'time_above_08g_pct', label: '>0.8G Time %', scale: 20 },
-    { key: 'peak_lat_g', label: 'Peak Lateral G', scale: 2 },
-    { key: 'consistency', label: 'Consistency', scale: 10 },
-    { key: 'time_above_10g_pct', label: '>1.0G Time %', scale: 5 },
+  // All five axes are pure G-force metrics — consistent unit and meaning
+  const metrics: Array<{ key: keyof typeof sessions[0]['data']['friction_circle']; label: string; scale: number }> = [
+    { key: 'total_g_p95',         label: 'Total G P95',  scale: 1.8 },
+    { key: 'time_above_08g_pct',  label: '>0.8G Time %', scale: 18  },
+    { key: 'peak_lat_g',          label: 'Peak Lateral', scale: 1.6 },
+    { key: 'peak_long_g_brake',   label: 'Brake G',      scale: 1.4 },
+    { key: 'peak_long_g_accel',   label: 'Accel G',      scale: 0.7 },
   ];
 
   return metrics.map(({ key, label, scale }) => {
     const point: RadarPoint = { metric: label, fullMark: 100 };
     sessions.forEach(s => {
-      let raw: number;
-      if (key === 'consistency') {
-        const spread = s.data.consistency.spread_s;
-        raw = Math.max(0, 10 - spread);
-      } else {
-        raw = s.data.friction_circle[key as keyof typeof s.data.friction_circle] as number;
-      }
+      const raw = s.data.friction_circle[key] as number;
       point[s.id] = parseFloat(Math.min(100, (raw / scale) * 100).toFixed(1));
     });
     return point;
@@ -67,8 +62,8 @@ export function FrictionCircleChart({ sessions }: Props) {
 
   return (
     <div className="space-y-2" style={{ touchAction: 'pan-x pan-y', userSelect: 'none' }}>
-      <p style={{ fontFamily: 'BMWTypeNext', fontSize: '11px', color: '#606070' }}>
-        Normalized scores (0–100). Higher = better. Consistency inverts spread — lower spread = higher score.
+      <p style={{ fontFamily: 'BMWTypeNext', fontSize: '10px', color: '#505060', letterSpacing: '0.04em' }}>
+        Grip utilization profile — normalized 0–100. Higher = using more of the car's performance envelope.
       </p>
       <ResponsiveContainer width="100%" height={320}>
         <RadarChart data={data} margin={{ top: 16, right: 32, left: 32, bottom: 16 }}>

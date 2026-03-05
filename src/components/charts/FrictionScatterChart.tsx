@@ -8,9 +8,9 @@ import { sessionLabel } from '@/lib/utils';
 import { AXIS_STYLE, GRID_STYLE, TOOLTIP_STYLE } from '@/lib/chartTheme';
 
 function pointColor(totalG: number): string {
-  if (totalG > 0.8) return '#00C853';
+  if (totalG > 0.8) return '#22C55E';
   if (totalG >= 0.5) return '#1C69D4';
-  return '#252535';
+  return '#3A3A52'; // was #252535 — too dark to see on dark background
 }
 
 interface ScatterDot {
@@ -107,9 +107,9 @@ export function FrictionScatterChart({ sessions }: Props) {
       </ResponsiveContainer>
       <div className="flex gap-5 px-1">
         {[
-          { color: '#00C853', label: '> 0.8G' },
+          { color: '#22C55E', label: '> 0.8G' },
           { color: '#1C69D4', label: '0.5 – 0.8G' },
-          { color: '#252535', label: '< 0.5G' },
+          { color: '#3A3A52', label: '< 0.5G' },
         ].map(item => (
           <div key={item.label} className="flex items-center gap-1.5">
             <div className="w-2 h-2 rounded-full" style={{ background: item.color }} />
