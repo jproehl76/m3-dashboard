@@ -101,10 +101,11 @@ function opportunityColor(pct: number): string {
 }
 
 
-// ── Leaflet polyline heat overlay ─────────────────────────────────────────────
-// Uses react-leaflet Polyline — guaranteed pixel-perfect alignment with tiles.
-// GPS points are quantized into 3 color bins per channel, then grouped into
-// consecutive same-color runs to keep DOM element count low (~100–400 polylines).
+// ── Heat overlay ──────────────────────────────────────────────────────────────
+// Strategy: if a reference track layout exists, paint its waypoints with the
+// telemetry color of the nearest GPS trace point. This guarantees the colored
+// path sits pixel-perfect on the track outline (same as AiM/MoTeC approach).
+// Falls back to raw GPS trace when no reference layout is available.
 interface Stats { minSpd: number; maxSpd: number; maxBrake: number }
 
 function getQuantizedColor(pt: GpsPoint, ch: HeatChannel, stats: Stats): string {
@@ -131,50 +132,76 @@ function getQuantizedColor(pt: GpsPoint, ch: HeatChannel, stats: Stats): string 
   }
 }
 
-function HeatPolylines({ trace, channel, stats }: { trace: GpsPoint[]; channel: HeatChannel; stats: Stats }) {
+/** Given an array of [lat,lon] path points and their assigned colors, group into
+ *  consecutive same-color runs to minimise the number of Polyline elements. */
+function buildSegments(
+  path: [number, number][],
+  colors: string[],
+): { color: string; positions: [number, number][] }[] {
+  if (path.length < 2) return [];
+  const result: { color: string; positions: [number, number][] }[] = [];
+  let curColor = colors[0];
+  let curPts: [number, number][] = [path[0]];
+
+  for (let i = 1; i < path.length; i++) {
+    const c = colors[i];
+    if (c === curColor) {
+      curPts.push(path[i]);
+    } else {
+      curPts.push(path[i]); // overlap for seamless join
+      result.push({ color: curColor, positions: curPts });
+      curColor = c;
+      curPts = [path[i - 1], path[i]];
+    }
+  }
+  if (curPts.length > 1) result.push({ color: curColor, positions: curPts });
+  return result;
+}
+
+function HeatPolylines({
+  trace, channel, stats, refWaypoints,
+}: {
+  trace: GpsPoint[];
+  channel: HeatChannel;
+  stats: Stats;
+  refWaypoints: [number, number][] | null;
+}) {
   const segments = useMemo(() => {
-    if (trace.length < 2) return [];
+    if (!trace.length) return [];
 
-    // Max distance between consecutive GPS points in degrees (~500m) to skip jumps
-    const MAX_JUMP = 0.005;
-
-    const result: { color: string; positions: [number, number][] }[] = [];
-    let currentColor = getQuantizedColor(trace[0], channel, stats);
-    let currentPositions: [number, number][] = [[trace[0].lat, trace[0].lon]];
-
-    for (let i = 1; i < trace.length; i++) {
-      const prev = trace[i - 1];
-      const curr = trace[i];
-      const jump = Math.hypot(curr.lat - prev.lat, curr.lon - prev.lon);
-
-      if (jump > MAX_JUMP) {
-        // GPS jump — flush current segment and start fresh
-        if (currentPositions.length > 1) {
-          result.push({ color: currentColor, positions: currentPositions });
+    if (refWaypoints && refWaypoints.length >= 2) {
+      // ── Layout-mapped mode ─────────────────────────────────────────────────
+      // For each reference waypoint, find the nearest GPS trace point and use
+      // its telemetry channel value for color. The path itself is the reference
+      // layout — pixel-perfect with the satellite tiles.
+      const colors: string[] = refWaypoints.map(([wLat, wLon]) => {
+        let bestIdx = 0;
+        let bestDist = Infinity;
+        for (let i = 0; i < trace.length; i++) {
+          const d = Math.hypot(trace[i].lat - wLat, trace[i].lon - wLon);
+          if (d < bestDist) { bestDist = d; bestIdx = i; }
         }
-        currentColor = getQuantizedColor(curr, channel, stats);
-        currentPositions = [[curr.lat, curr.lon]];
-        continue;
-      }
-
-      const color = getQuantizedColor(curr, channel, stats);
-      if (color === currentColor) {
-        currentPositions.push([curr.lat, curr.lon]);
-      } else {
-        // Overlap by one point for seamless transition
-        currentPositions.push([curr.lat, curr.lon]);
-        result.push({ color: currentColor, positions: currentPositions });
-        currentColor = color;
-        currentPositions = [[prev.lat, prev.lon], [curr.lat, curr.lon]];
-      }
+        return getQuantizedColor(trace[bestIdx], channel, stats);
+      });
+      return buildSegments(refWaypoints, colors);
     }
 
-    if (currentPositions.length > 1) {
-      result.push({ color: currentColor, positions: currentPositions });
+    // ── Raw GPS trace mode (no reference layout) ───────────────────────────
+    const MAX_JUMP = 0.005; // ~500m — skip GPS discontinuities between laps
+    const path: [number, number][] = [];
+    const colors: string[] = [];
+
+    for (let i = 0; i < trace.length; i++) {
+      if (i > 0) {
+        const jump = Math.hypot(trace[i].lat - trace[i-1].lat, trace[i].lon - trace[i-1].lon);
+        if (jump > MAX_JUMP) continue;
+      }
+      path.push([trace[i].lat, trace[i].lon]);
+      colors.push(getQuantizedColor(trace[i], channel, stats));
     }
 
-    return result;
-  }, [trace, channel, stats]);
+    return buildSegments(path, colors);
+  }, [trace, channel, stats, refWaypoints]);
 
   return (
     <>
@@ -182,7 +209,7 @@ function HeatPolylines({ trace, channel, stats }: { trace: GpsPoint[]; channel: 
         <Polyline
           key={i}
           positions={seg.positions}
-          pathOptions={{ color: seg.color, weight: 4, opacity: 0.92, lineCap: 'round', lineJoin: 'round' }}
+          pathOptions={{ color: seg.color, weight: 5, opacity: 0.95, lineCap: 'round', lineJoin: 'round' }}
           interactive={false}
         />
       ))}
@@ -595,9 +622,14 @@ export function TrackHeatMap({ sessions, selectedCornerId, onCornerSelect }: Pro
               {/* Fit bounds when session changes */}
               <MapBoundsFitter bounds={mapBounds} />
 
-              {/* GPS heat trace — native Leaflet polylines, pixel-perfect with tiles */}
+              {/* Heat overlay — painted onto reference layout waypoints for pixel-perfect alignment */}
               {trace.length > 1 && (
-                <HeatPolylines trace={trace} channel={channel} stats={stats} />
+                <HeatPolylines
+                  trace={trace}
+                  channel={channel}
+                  stats={stats}
+                  refWaypoints={refLayout?.waypoints ?? osmWaypoints}
+                />
               )}
 
               {/* Corner apex markers */}
