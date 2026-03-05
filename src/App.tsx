@@ -187,11 +187,11 @@ export default function App() {
         <div className="absolute inset-0" style={{
           background: `
             linear-gradient(105deg,
-              #08080E 0%,
-              #0C0C18 25%,
-              ${trackPrimary}18 55%,
-              ${trackAccent}08 80%,
-              #08080E 100%
+              #0E0E1A 0%,
+              #121220 22%,
+              ${trackPrimary}38 52%,
+              ${trackAccent}20 75%,
+              #0E0E1A 100%
             )
           `,
         }} />
@@ -280,7 +280,12 @@ export default function App() {
             {trackLogo && (
               <img src={trackLogo} alt={activeTrackLayout?.name}
                 className="hidden sm:block object-contain"
-                style={{ height: 'clamp(20px, 3.5vh, 36px)', maxWidth: 120, opacity: 0.75, filter: 'brightness(1.1)' }} />
+                style={{
+                  height: 'clamp(36px, 7vh, 72px)',
+                  maxWidth: 200,
+                  opacity: 0.92,
+                  filter: 'brightness(1.25) drop-shadow(0 0 12px rgba(255,255,255,0.15))',
+                }} />
             )}
             {user.picture && (
               <img src={user.picture} alt={user.name} className="rounded-full ring-1 ring-border"
