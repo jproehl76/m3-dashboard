@@ -120,15 +120,17 @@ export default function App() {
                 <LogOut size={16} />
               </button>
             </div>
-            <img
-              src={bmwMLogo}
-              alt="BMW M"
-              className="h-[200px] w-[200px]"
-              style={{ mixBlendMode: 'screen' }}
-            />
           </div>
         </div>
       </header>
+
+      {/* BMW M logo — fixed below header, top-right, transparent background via screen blend */}
+      <img
+        src={bmwMLogo}
+        alt="BMW M"
+        className="fixed right-0 z-20 h-[200px] w-[200px] pointer-events-none"
+        style={{ top: '57px', mixBlendMode: 'screen' }}
+      />
 
       <div className="flex flex-1 min-h-0">
         {/* Desktop sidebar */}
