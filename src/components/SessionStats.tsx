@@ -31,14 +31,14 @@ export function SessionStats({ sessions }: Props) {
             )}
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
               {/* Best lap — special purple card */}
-              <div className="card p-3 col-span-2 sm:col-span-1" style={{ borderColor: 'rgba(168,85,247,0.4)', background: 'rgba(168,85,247,0.06)' }}>
-                <div className="flex items-center gap-1.5 mb-1">
-                  <div className="w-1.5 h-1.5 rounded-full" style={{ background: '#A855F7' }} />
-                  <span style={{ fontFamily: 'Rajdhani', fontSize: '10px', letterSpacing: '0.15em', textTransform: 'uppercase', color: '#A855F7' }}>Best Lap</span>
+              <div className="card p-4 col-span-2 sm:col-span-1" style={{ borderColor: 'rgba(168,85,247,0.3)', background: 'rgba(168,85,247,0.06)' }}>
+                <div className="flex items-center gap-1.5 mb-2">
+                  <div className="w-0.5 h-3 rounded-full" style={{ background: '#A855F7' }} />
+                  <span style={{ fontFamily: 'Barlow Condensed', fontSize: '10px', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#705080' }}>Best Lap</span>
                 </div>
-                <div style={{ fontFamily: 'JetBrains Mono', fontSize: '28px', fontWeight: 600, color: '#A855F7', lineHeight: 1 }}>{bestLap}</div>
-                <div style={{ fontFamily: 'Rajdhani', fontSize: '11px', color: '#606070', marginTop: 4 }}>
-                  {header.analyzed_laps} laps
+                <div style={{ fontFamily: 'JetBrains Mono', fontSize: '32px', fontWeight: 600, color: '#A855F7', lineHeight: 1, textShadow: '0 0 20px rgba(168,85,247,0.35)' }}>{bestLap}</div>
+                <div style={{ fontFamily: 'Barlow Condensed', fontSize: '11px', letterSpacing: '0.1em', color: '#505060', marginTop: 5, textTransform: 'uppercase' }}>
+                  {header.analyzed_laps} laps analyzed
                 </div>
               </div>
 
@@ -90,18 +90,18 @@ interface KpiCardProps {
 
 function KpiCard({ label, value, valueColor, subtext, dotColor }: KpiCardProps) {
   return (
-    <div className="card p-3 flex flex-col gap-1">
-      <div className="flex items-center gap-1.5">
-        {dotColor && <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: dotColor }} />}
-        <span style={{ fontFamily: 'Rajdhani', fontSize: '10px', letterSpacing: '0.15em', textTransform: 'uppercase', color: '#606070' }}>
+    <div className="card p-4 flex flex-col gap-1">
+      <div className="flex items-center gap-1.5 mb-1">
+        {dotColor && <div className="w-0.5 h-3 rounded-full flex-shrink-0" style={{ background: dotColor }} />}
+        <span style={{ fontFamily: 'Barlow Condensed', fontSize: '10px', letterSpacing: '0.18em', textTransform: 'uppercase', color: '#505060' }}>
           {label}
         </span>
       </div>
-      <div style={{ fontFamily: 'JetBrains Mono', fontSize: '22px', fontWeight: 500, color: valueColor ?? '#F4F4FC', lineHeight: 1 }}>
+      <div style={{ fontFamily: 'JetBrains Mono', fontSize: '26px', fontWeight: 500, color: valueColor ?? '#E0E0EE', lineHeight: 1 }}>
         {value}
       </div>
       {subtext && (
-        <div style={{ fontFamily: 'Rajdhani', fontSize: '11px', color: '#606070' }}>{subtext}</div>
+        <div style={{ fontFamily: 'Barlow Condensed', fontSize: '11px', letterSpacing: '0.08em', color: '#505060', marginTop: 3 }}>{subtext}</div>
       )}
     </div>
   );

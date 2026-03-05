@@ -1,16 +1,7 @@
 import { useState, useEffect } from 'react';
 import {
-  LogOut,
-  LayoutDashboard,
-  Map as MapIcon,
-  Activity,
-  BarChart2,
-  Heart,
-  Timer,
-  TrendingUp,
-  Table2,
-  Thermometer,
-  Target,
+  LogOut, LayoutDashboard, Activity, BarChart2, Heart,
+  Timer, TrendingUp, Thermometer, Target, FileText, Map as MapIcon,
 } from 'lucide-react';
 import { LoginScreen } from '@/components/LoginScreen';
 import { Toaster, toast } from 'sonner';
@@ -43,11 +34,7 @@ import bmwMLogo from '@/assets/bmw-m-logo.jpg';
 
 const AUTH_KEY = 'm3-auth-user';
 
-interface AuthUser {
-  email: string;
-  name: string;
-  picture: string;
-}
+interface AuthUser { email: string; name: string; picture: string }
 
 interface TabDef {
   id: string;
@@ -55,438 +42,398 @@ interface TabDef {
   Icon: React.ComponentType<{ size?: number; strokeWidth?: number }>;
 }
 
-const MOBILE_TABS: TabDef[] = [
-  { id: 'overview',  label: 'Home',     Icon: LayoutDashboard },
-  { id: 'trackmap',  label: 'Map',      Icon: MapIcon },
-  { id: 'traces',    label: 'Traces',   Icon: Activity },
-  { id: 'analysis',  label: 'Analysis', Icon: BarChart2 },
-  { id: 'readiness', label: 'Body',     Icon: Heart },
+// Desktop right-panel tabs (track map is permanently in the left panel)
+const ANALYSIS_TABS: TabDef[] = [
+  { id: 'overview',    label: 'Overview',   Icon: LayoutDashboard },
+  { id: 'laps',        label: 'Lap Times',  Icon: Timer },
+  { id: 'corners',     label: 'Corners',    Icon: TrendingUp },
+  { id: 'traces',      label: 'Traces',     Icon: Activity },
+  { id: 'lap-delta',   label: 'Delta',      Icon: BarChart2 },
+  { id: 'development', label: 'Development',Icon: Target },
+  { id: 'thermals',    label: 'Thermals',   Icon: Thermometer },
+  { id: 'readiness',   label: 'Readiness',  Icon: Heart },
+  { id: 'notes',       label: 'Notes',      Icon: FileText },
 ];
 
-const ALL_TABS: TabDef[] = [
-  { id: 'overview',      label: 'Overview',    Icon: LayoutDashboard },
-  { id: 'trackmap',      label: 'Track Map',   Icon: MapIcon },
-  { id: 'laptimes',      label: 'Lap Times',   Icon: Timer },
-  { id: 'corners',       label: 'Corners',     Icon: TrendingUp },
-  { id: 'corner-detail', label: 'Detail',      Icon: Table2 },
-  { id: 'traces',        label: 'Traces',      Icon: Activity },
-  { id: 'lap-delta',     label: 'Delta',       Icon: BarChart2 },
-  { id: 'thermals',      label: 'Thermals',    Icon: Thermometer },
-  { id: 'development',   label: 'Development', Icon: Target },
-  { id: 'readiness',     label: 'Readiness',   Icon: Heart },
+// Mobile bottom nav (track map IS a full-screen tab on mobile)
+const MOBILE_TABS: TabDef[] = [
+  { id: 'map',      label: 'Map',     Icon: MapIcon },
+  { id: 'overview', label: 'Home',    Icon: LayoutDashboard },
+  { id: 'corners',  label: 'Corners', Icon: TrendingUp },
+  { id: 'traces',   label: 'Traces',  Icon: Activity },
+  { id: 'readiness',label: 'Body',    Icon: Heart },
 ];
 
 export default function App() {
   const store = usePersistedSessions();
   const { memory, loaded, update } = useMemory();
   const [activeTab, setActiveTab] = useState('overview');
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [selectedCornerId, setSelectedCornerId] = useState<string | null>(null);
   const [whoopConnected, setWhoopConnected] = useState(false);
   const [user, setUser] = useState<AuthUser | null>(() => {
-    try {
-      const raw = localStorage.getItem(AUTH_KEY);
-      return raw ? (JSON.parse(raw) as AuthUser) : null;
-    } catch {
-      return null;
-    }
+    try { const r = localStorage.getItem(AUTH_KEY); return r ? JSON.parse(r) : null; }
+    catch { return null; }
   });
 
-  // Restore active tab from memory on mount
+  // Restore last active tab
   useEffect(() => {
-    if (loaded) {
-      setActiveTab(memory.lastActiveTab || 'overview');
-    }
-  }, [loaded]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (loaded) setActiveTab(memory.lastActiveTab || 'overview');
+  }, [loaded]); // eslint-disable-line
 
-  // Persist active tab to memory on change
+  // Persist active tab
   useEffect(() => {
-    if (loaded) {
-      update({ lastActiveTab: activeTab });
-    }
-  }, [activeTab, loaded]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (loaded) update({ lastActiveTab: activeTab });
+  }, [activeTab, loaded]); // eslint-disable-line
 
-  // When active sessions change, add to track history
+  // Track history
   useEffect(() => {
     if (!loaded) return;
-    const newEntries = store.activeSessions.map(s => ({
-      sessionId: s.id,
-      track: s.data.header.track,
-      date: s.data.header.date,
-      bestLap: formatLapTime(s.data.consistency.best_lap_s),
-      lapCount: s.data.header.analyzed_laps,
+    const entries = store.activeSessions.map(s => ({
+      sessionId: s.id, track: s.data.header.track, date: s.data.header.date,
+      bestLap: formatLapTime(s.data.consistency.best_lap_s), lapCount: s.data.header.analyzed_laps,
     }));
-    if (newEntries.length > 0) {
-      update({
-        trackHistory: [
-          ...memory.trackHistory.filter(h => !newEntries.find(e => e.sessionId === h.sessionId)),
-          ...newEntries,
-        ].slice(-20),
-      });
+    if (entries.length > 0) {
+      update({ trackHistory: [...memory.trackHistory.filter(h => !entries.find(e => e.sessionId === h.sessionId)), ...entries].slice(-20) });
     }
-  }, [store.activeSessions.map(s => s.id).join(','), loaded]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [store.activeSessions.map(s => s.id).join(','), loaded]); // eslint-disable-line
 
-  // Handle WHOOP OAuth callback — must run before the login check
+  // WHOOP OAuth callback
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const code = params.get('code');
-    const state = params.get('state');
+    const p = new URLSearchParams(window.location.search);
+    const code = p.get('code'), state = p.get('state');
     if (code && state) {
       window.history.replaceState({}, '', window.location.pathname);
-      handleWhoopCallback(code, state).then((ok) => {
-        if (ok) {
-          setWhoopConnected(true);
-          toast.success('WHOOP connected successfully');
-        } else {
-          toast.error('WHOOP connection failed — check console for details');
-        }
-      }).catch(() => {
-        toast.error('WHOOP connection failed');
-      });
+      handleWhoopCallback(code, state).then(ok => {
+        if (ok) { setWhoopConnected(true); toast.success('WHOOP connected'); }
+        else toast.error('WHOOP connection failed — check console');
+      }).catch(() => toast.error('WHOOP connection failed'));
     }
   }, []);
 
   useEffect(() => {
-    if (user) {
-      localStorage.setItem(AUTH_KEY, JSON.stringify(user));
-    } else {
-      localStorage.removeItem(AUTH_KEY);
-    }
+    if (user) localStorage.setItem(AUTH_KEY, JSON.stringify(user));
+    else localStorage.removeItem(AUTH_KEY);
   }, [user]);
 
-  if (!user) {
-    return <LoginScreen onAuth={setUser} />;
-  }
+  if (!user) return <LoginScreen onAuth={setUser} />;
 
   const signOut = () => setUser(null);
 
-  // Derive best lap info for header center display
-  const bestLapSession = store.activeSessions.length > 0
-    ? store.activeSessions.reduce((best, s) =>
-        s.data.consistency.best_lap_s < best.data.consistency.best_lap_s ? s : best
-      )
+  // Best lap across active sessions
+  const bestSession = store.activeSessions.length > 0
+    ? store.activeSessions.reduce((b, s) => s.data.consistency.best_lap_s < b.data.consistency.best_lap_s ? s : b)
     : null;
-  const bestLapDisplay = bestLapSession ? formatLapTime(bestLapSession.data.consistency.best_lap_s) : null;
-  const spreadDisplay = bestLapSession ? `${bestLapSession.data.consistency.spread_s.toFixed(1)}s spread` : null;
+  const bestLapDisplay = bestSession ? formatLapTime(bestSession.data.consistency.best_lap_s) : null;
+
+  const sessionDates = store.activeSessions.map(s => s.data.header.date);
+
+  // ── Tab content renderer ────────────────────────────────────────────────────
+  function renderTabContent(tab: string) {
+    if (store.activeSessions.length === 0) return <EmptyDashboard />;
+    switch (tab) {
+      case 'overview': return (
+        <div className="space-y-4">
+          <Section title="Session Summary"><ErrorBoundary><SessionStats sessions={store.activeSessions} /></ErrorBoundary></Section>
+          <Section title="WHOOP Recovery"><ErrorBoundary><WhoopPanel sessionDates={sessionDates} connectedOverride={whoopConnected} /></ErrorBoundary></Section>
+          <Section title="Coaching Insights"><ErrorBoundary><CoachingInsights sessions={store.activeSessions} /></ErrorBoundary></Section>
+          <Section title="Lap Time Progression"><ErrorBoundary><LapTimesChart sessions={store.activeSessions} /></ErrorBoundary></Section>
+        </div>
+      );
+      case 'map': return (  // mobile-only full-screen map tab
+        <div className="h-full p-3">
+          <TrackMapChart sessions={store.activeSessions} variant="chart"
+            selectedCornerId={selectedCornerId} onCornerSelect={setSelectedCornerId} />
+        </div>
+      );
+      case 'laps': return (
+        <div className="space-y-4">
+          <Section title="Lap Time Progression"><ErrorBoundary><LapTimesChart sessions={store.activeSessions} /></ErrorBoundary></Section>
+          <Section title="Lap Delta by Corner"><ErrorBoundary><LapDeltaChart sessions={store.activeSessions} /></ErrorBoundary></Section>
+        </div>
+      );
+      case 'corners': return (
+        <div className="space-y-4">
+          <Section title="Corner Speed Comparison"><ErrorBoundary><CornerSpeedChart sessions={store.activeSessions} /></ErrorBoundary></Section>
+          <Section title="Corner Detail"><ErrorBoundary><CornerDetailTable sessions={store.activeSessions} /></ErrorBoundary></Section>
+        </div>
+      );
+      case 'corner-detail': return (
+        <Section title="Corner Detail"><ErrorBoundary><CornerDetailTable sessions={store.activeSessions} /></ErrorBoundary></Section>
+      );
+      case 'traces': return (
+        <Section title="Throttle & Brake Trace"><ErrorBoundary><TraceChart sessions={store.activeSessions} /></ErrorBoundary></Section>
+      );
+      case 'lap-delta': return (
+        <Section title="Lap Delta by Corner"><ErrorBoundary><LapDeltaChart sessions={store.activeSessions} /></ErrorBoundary></Section>
+      );
+      case 'thermals': return (
+        <Section title="Thermal Trends"><ErrorBoundary><ThermalChart sessions={store.activeSessions} /></ErrorBoundary></Section>
+      );
+      case 'development': return (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <Section title="Friction Circle"><ErrorBoundary><FrictionScatterChart sessions={store.activeSessions} /></ErrorBoundary></Section>
+          <Section title="Driver Development Radar"><ErrorBoundary><FrictionCircleChart sessions={store.activeSessions} /></ErrorBoundary></Section>
+        </div>
+      );
+      case 'readiness': return (
+        <Section title="Driver Readiness">
+          <ErrorBoundary><ReadinessTab sessionDates={sessionDates} connectedOverride={whoopConnected} /></ErrorBoundary>
+        </Section>
+      );
+      case 'notes': return (
+        <Section title="Debrief Notes">
+          {store.activeSessions.map(s => (
+            <div key={s.id} className="space-y-1">
+              {store.activeSessions.length > 1 && (
+                <p style={{ fontFamily: 'Barlow Condensed', fontSize: '12px', color: '#606070', fontWeight: 500 }}>{sessionLabel(s)}</p>
+              )}
+              <DebriefNotes sessionId={s.id} />
+            </div>
+          ))}
+        </Section>
+      );
+      default: return null;
+    }
+  }
 
   return (
-    <div className="relative z-10 flex flex-col h-screen overflow-hidden">
+    <div className="flex flex-col h-screen overflow-hidden" style={{ background: '#0A0A12' }}>
       <Toaster position="bottom-right" richColors />
 
-      {/* Full-viewport atmospheric background */}
-      <div className="fixed inset-0 z-0 pointer-events-none">
+      {/* ════════════════════════════════════════════════════════════════════ */}
+      {/* HERO HEADER                                                         */}
+      {/* ════════════════════════════════════════════════════════════════════ */}
+      <header className="relative shrink-0 overflow-hidden"
+        style={{ height: 'clamp(72px, 14vh, 200px)' }}>
+
+        {/* Track photo — positioned right-center so the car shows on the right */}
         <img
-          src={trackPhoto}
-          alt="" aria-hidden="true"
-          className="w-full h-full object-cover object-center"
-          style={{ opacity: 0.12 }}
+          src={trackPhoto} alt="" aria-hidden="true"
+          className="absolute inset-0 w-full h-full object-cover"
+          style={{ objectPosition: 'center 40%', opacity: 0.65 }}
         />
-        <div className="absolute inset-0" style={{
-          background: 'linear-gradient(to bottom, rgba(15,15,20,0.75) 0%, rgba(15,15,20,0.55) 30%, rgba(15,15,20,0.85) 70%, rgba(15,15,20,0.97) 100%)'
-        }} />
-        <div className="absolute inset-0" style={{
-          background: 'radial-gradient(ellipse at 50% 0%, rgba(59,130,246,0.06) 0%, transparent 70%)'
-        }} />
-      </div>
 
-      {/* Header */}
-      <header className="relative z-20 h-14 flex items-center px-4 border-b border-[#2E2E3C] shrink-0"
-        style={{
-          background: 'linear-gradient(to bottom, rgba(36,36,48,0.95), rgba(26,26,34,0.90))',
-          backdropFilter: 'blur(12px)',
-          WebkitBackdropFilter: 'blur(12px)',
-        }}>
+        {/* Gradient overlays */}
+        {/* Left: dark (text readable) → right: transparent (photo shows through) */}
+        <div className="absolute inset-0" style={{
+          background: 'linear-gradient(100deg, rgba(10,10,18,0.97) 0%, rgba(10,10,18,0.90) 28%, rgba(10,10,18,0.50) 55%, rgba(10,10,18,0.62) 100%)',
+        }} />
+        {/* Bottom fade into app body */}
+        <div className="absolute inset-0" style={{
+          background: 'linear-gradient(to bottom, transparent 40%, rgba(10,10,18,0.80) 100%)',
+        }} />
+        {/* Blue accent bloom — top-left */}
+        <div className="absolute inset-0" style={{
+          background: 'radial-gradient(ellipse at 0% 50%, rgba(28,105,212,0.12) 0%, transparent 60%)',
+        }} />
 
-        {/* Left: logo + title */}
-        <div className="flex items-center gap-2.5 min-w-0 flex-1">
+        {/* Content */}
+        <div className="relative z-10 flex items-center h-full px-5 gap-4">
+
+          {/* BMW M logo */}
           <img
-            src={bmwMLogo}
-            alt="BMW M"
-            className="h-8 w-8 object-contain flex-shrink-0"
-            style={{ mixBlendMode: 'screen', filter: 'brightness(1.2)' }}
+            src={bmwMLogo} alt="BMW M"
+            className="shrink-0 object-contain"
+            style={{
+              height: 'clamp(36px, 7vh, 80px)',
+              width:  'clamp(36px, 7vh, 80px)',
+              mixBlendMode: 'screen',
+              filter: 'brightness(1.15) saturate(1.1)',
+            }}
           />
-          <div className="min-w-0">
-            <h1 style={{ fontFamily: 'Barlow Condensed', fontSize: '16px', fontWeight: 700, letterSpacing: '0.06em', color: '#E8E8F0', lineHeight: 1.1 }}>
-              M3 Session Dashboard
+
+          {/* Title block */}
+          <div className="flex flex-col justify-center min-w-0">
+            <h1 style={{
+              fontFamily: 'Barlow Condensed',
+              fontSize: 'clamp(18px, 3.2vh, 38px)',
+              fontWeight: 700,
+              letterSpacing: '0.07em',
+              color: '#F0F0FA',
+              lineHeight: 1,
+              textTransform: 'uppercase',
+            }}>
+              G80 M3 Competition
             </h1>
-            <p style={{ fontFamily: 'Rajdhani', fontSize: '11px', color: '#606070', lineHeight: 1 }}>
-              2025 BMW G80 M3 Competition xDrive
+            <p className="hidden sm:block" style={{
+              fontFamily: 'Barlow Condensed',
+              fontSize: 'clamp(10px, 1.4vh, 14px)',
+              letterSpacing: '0.2em',
+              color: '#505060',
+              textTransform: 'uppercase',
+              lineHeight: 1,
+              marginTop: 3,
+            }}>
+              Track Telemetry Dashboard
             </p>
           </div>
-        </div>
 
-        {/* Center: best lap (lg+) */}
-        {bestLapDisplay && (
-          <div className="hidden lg:flex flex-col items-center flex-shrink-0 px-4">
-            <span style={{ fontFamily: 'JetBrains Mono', fontSize: '18px', fontWeight: 600, color: '#A855F7', lineHeight: 1 }}>
-              {bestLapDisplay}
-            </span>
-            <span style={{ fontFamily: 'Rajdhani', fontSize: '10px', color: '#606070', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-              {spreadDisplay}
-            </span>
-          </div>
-        )}
-
-        {/* Right: sidebar toggle + avatar + logout */}
-        <div className="flex items-center gap-3 flex-shrink-0 ml-auto">
-          <button
-            onClick={() => setSidebarOpen(p => !p)}
-            className="hidden xl:block text-xs px-2 py-1 rounded border transition-colors"
-            style={{
-              fontFamily: 'Rajdhani',
-              letterSpacing: '0.05em',
-              color: '#606070',
-              borderColor: '#2E2E3C',
-              background: 'rgba(26,26,34,0.5)',
-            }}
-          >
-            {sidebarOpen ? 'Hide' : 'Show'} sidebar
-          </button>
-          {user.picture && (
-            <img src={user.picture} alt={user.name} className="h-7 w-7 rounded-full ring-1 ring-[#2E2E3C]" />
+          {/* Best lap — center display, only on md+ when data loaded */}
+          {bestLapDisplay && (
+            <div className="hidden md:flex flex-col items-center absolute left-1/2 -translate-x-1/2">
+              <span style={{
+                fontFamily: 'JetBrains Mono',
+                fontSize: 'clamp(18px, 3.5vh, 32px)',
+                fontWeight: 600,
+                color: '#A855F7',
+                lineHeight: 1,
+                textShadow: '0 0 20px rgba(168,85,247,0.5), 0 0 40px rgba(168,85,247,0.2)',
+              }}>
+                {bestLapDisplay}
+              </span>
+              <span style={{
+                fontFamily: 'Barlow Condensed',
+                fontSize: 'clamp(8px, 1.2vh, 11px)',
+                letterSpacing: '0.2em',
+                color: '#605068',
+                textTransform: 'uppercase',
+                marginTop: 2,
+              }}>
+                Best Lap
+              </span>
+            </div>
           )}
-          <button onClick={signOut} style={{ color: '#606070' }} className="hover:text-red-400 transition-colors" title="Sign out">
-            <LogOut size={16} />
-          </button>
+
+          {/* Right actions */}
+          <div className="flex items-center gap-3 ml-auto shrink-0">
+            {user.picture && (
+              <img src={user.picture} alt={user.name}
+                className="rounded-full ring-1 ring-[#2E2E3C]"
+                style={{ width: 'clamp(24px, 3.5vh, 32px)', height: 'clamp(24px, 3.5vh, 32px)' }} />
+            )}
+            <button onClick={signOut} style={{ color: '#505060' }}
+              className="hover:text-[#EF4444] transition-colors" title="Sign out">
+              <LogOut size={16} />
+            </button>
+          </div>
         </div>
+
+        {/* Bottom border line — gradient blue → purple */}
+        <div className="absolute bottom-0 left-0 right-0 h-px" style={{
+          background: 'linear-gradient(to right, transparent, #1C69D4 20%, #A855F7 60%, transparent)',
+        }} />
       </header>
 
-      {/* Body: sidebar + main */}
-      <div className="relative z-10 flex flex-1 min-h-0">
+      {/* ════════════════════════════════════════════════════════════════════ */}
+      {/* BODY                                                                */}
+      {/* ════════════════════════════════════════════════════════════════════ */}
+      <div className="flex flex-1 min-h-0">
 
-        {/* Desktop sidebar */}
-        {sidebarOpen && (
-          <aside className="hidden xl:flex w-64 shrink-0 border-r border-[#2E2E3C] flex-col gap-3 p-3 overflow-y-auto scroll-touch relative"
-            style={{ background: 'rgba(15,15,20,0.92)', backdropFilter: 'blur(8px)' }}>
+        {/* ── LEFT PANEL: track map + session controls (desktop xl+) ───────── */}
+        <aside className="hidden xl:flex flex-col w-[380px] shrink-0 border-r border-[#1E1E28]"
+          style={{ background: '#080810' }}>
+
+          {/* Session controls */}
+          <div className="shrink-0 p-3 space-y-2 border-b border-[#1E1E28]">
             <DropZone onSessionLoaded={store.addSession} />
             <DrivePickerButton onSessionLoaded={store.addSession} />
             {store.sessions.length > 0 && (
-              <button
-                onClick={store.clearSavedSessions}
-                className="text-xs self-start transition-colors"
-                style={{ fontFamily: 'Rajdhani', color: '#606070' }}
-                onMouseEnter={e => (e.currentTarget.style.color = '#EF4444')}
-                onMouseLeave={e => (e.currentTarget.style.color = '#606070')}
-              >
-                Clear saved sessions
-              </button>
+              <div className="flex items-center justify-between">
+                <SessionList
+                  sessions={store.sessions}
+                  activeIds={store.activeSessionIds}
+                  onToggle={store.toggleActive}
+                  onRemove={store.removeSession}
+                  onRename={store.renameSession}
+                  onClearAll={store.clearAll}
+                />
+              </div>
             )}
-            <SessionList
-              sessions={store.sessions}
-              activeIds={store.activeSessionIds}
-              onToggle={store.toggleActive}
-              onRemove={store.removeSession}
-              onRename={store.renameSession}
-              onClearAll={store.clearAll}
-            />
             {store.sessions.length === 0 && (
-              <div className="space-y-1" style={{ fontFamily: 'Rajdhani', fontSize: '12px', color: '#606070' }}>
-                <p className="font-medium" style={{ color: '#9898A8' }}>Getting started</p>
-                <ol className="list-decimal list-inside space-y-1">
+              <div className="py-1 space-y-1" style={{ fontFamily: 'Barlow Condensed', fontSize: '11px', letterSpacing: '0.08em', color: '#404058', textTransform: 'uppercase' }}>
+                <p style={{ color: '#505060' }}>Getting started</p>
+                <ol className="list-decimal list-inside space-y-0.5">
                   <li>Export CSV from RaceChrono</li>
-                  <li>Run preprocessor → <span style={{ fontFamily: 'JetBrains Mono', color: '#9898A8' }}>_summary.json</span></li>
-                  <li>Drop the JSON file here</li>
+                  <li>Drop here or load from Drive</li>
                   <li>Load multiple sessions to compare</li>
                 </ol>
               </div>
             )}
-          </aside>
-        )}
+            {store.sessions.length > 0 && (
+              <button
+                onClick={store.clearSavedSessions}
+                className="text-xs transition-colors"
+                style={{ fontFamily: 'Barlow Condensed', fontSize: '10px', letterSpacing: '0.1em', color: '#303040', textTransform: 'uppercase' }}
+                onMouseEnter={e => (e.currentTarget.style.color = '#EF4444')}
+                onMouseLeave={e => (e.currentTarget.style.color = '#303040')}
+              >
+                Clear saved sessions
+              </button>
+            )}
+          </div>
 
-        {/* Main content */}
-        <main className="flex-1 overflow-y-auto scroll-touch p-3 md:p-4 pb-[calc(80px+env(safe-area-inset-bottom))] xl:pb-4">
-          {store.activeSessions.length === 0 ? (
-            <EmptyDashboard />
-          ) : (
-            <div className="space-y-0">
-              {/* Desktop tab strip */}
-              <div className="hidden xl:flex items-center gap-1 px-1 py-2 border-b border-[#2E2E3C] overflow-x-auto mb-4">
-                {ALL_TABS.map(tab => (
+          {/* Track map — fills remaining height */}
+          <div className="flex-1 min-h-0 p-3">
+            <TrackMapChart
+              sessions={store.activeSessions}
+              variant="panel"
+              selectedCornerId={selectedCornerId}
+              onCornerSelect={setSelectedCornerId}
+            />
+          </div>
+        </aside>
+
+        {/* ── RIGHT PANEL: analysis tabs + content ─────────────────────────── */}
+        <div className="flex flex-col flex-1 min-w-0 min-h-0">
+
+          {/* Desktop tab strip */}
+          {store.activeSessions.length > 0 && (
+            <div className="hidden xl:flex items-center gap-0.5 px-3 py-2 border-b border-[#1E1E28] overflow-x-auto shrink-0"
+              style={{ background: '#080810' }}>
+              {ANALYSIS_TABS.map(tab => {
+                const active = activeTab === tab.id;
+                return (
                   <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-                    className="flex items-center gap-2 px-4 py-2 rounded-md text-sm whitespace-nowrap transition-all duration-150"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded whitespace-nowrap transition-all duration-150 shrink-0"
                     style={{
-                      fontFamily: 'Rajdhani', letterSpacing: '0.05em',
-                      background: activeTab === tab.id ? 'rgba(59,130,246,0.12)' : 'transparent',
-                      color: activeTab === tab.id ? '#3B82F6' : '#606070',
-                      borderBottom: activeTab === tab.id ? '2px solid #3B82F6' : '2px solid transparent',
+                      fontFamily: 'Barlow Condensed', fontSize: '12px', letterSpacing: '0.08em', textTransform: 'uppercase',
+                      background: active ? 'rgba(28,105,212,0.12)' : 'transparent',
+                      color: active ? '#1C69D4' : '#404058',
+                      borderBottom: active ? '2px solid #1C69D4' : '2px solid transparent',
                     }}>
-                    <tab.Icon size={14} />
+                    <tab.Icon size={13} strokeWidth={active ? 2 : 1.5} />
                     {tab.label}
                   </button>
-                ))}
-              </div>
-
-              {/* Tab content */}
-              {activeTab === 'overview' && (
-                <div className="space-y-4">
-                  <ErrorBoundary>
-                    <Section title="Session Summary">
-                      <SessionStats sessions={store.activeSessions} />
-                    </Section>
-                  </ErrorBoundary>
-                  <ErrorBoundary>
-                    <Section title="WHOOP Recovery">
-                      <WhoopPanel sessionDates={store.activeSessions.map(s => s.data.header.date)} connectedOverride={whoopConnected} />
-                    </Section>
-                  </ErrorBoundary>
-                  <ErrorBoundary>
-                    <Section title="Lap Time Progression">
-                      <LapTimesChart sessions={store.activeSessions} />
-                    </Section>
-                  </ErrorBoundary>
-                  <ErrorBoundary>
-                    <Section title="Coaching Insights">
-                      <CoachingInsights sessions={store.activeSessions} />
-                    </Section>
-                  </ErrorBoundary>
-                  <ErrorBoundary>
-                    <Section title="Debrief Notes">
-                      {store.activeSessions.map(session => (
-                        <div key={session.id} className="space-y-1">
-                          {store.activeSessions.length > 1 && (
-                            <p style={{ fontFamily: 'Rajdhani', fontSize: '12px', color: '#606070', fontWeight: 500 }}>{sessionLabel(session)}</p>
-                          )}
-                          <DebriefNotes sessionId={session.id} />
-                        </div>
-                      ))}
-                    </Section>
-                  </ErrorBoundary>
-                </div>
-              )}
-
-              {activeTab === 'trackmap' && (
-                <div>
-                  <ErrorBoundary>
-                    <Section title="GPS Track Map">
-                      <TrackMapChart sessions={store.activeSessions} />
-                    </Section>
-                  </ErrorBoundary>
-                </div>
-              )}
-
-              {activeTab === 'laptimes' && (
-                <div>
-                  <ErrorBoundary>
-                    <Section title="Lap Time Progression">
-                      <LapTimesChart sessions={store.activeSessions} />
-                    </Section>
-                  </ErrorBoundary>
-                </div>
-              )}
-
-              {activeTab === 'corners' && (
-                <div>
-                  <ErrorBoundary>
-                    <Section title="Corner Speed Comparison">
-                      <CornerSpeedChart sessions={store.activeSessions} />
-                    </Section>
-                  </ErrorBoundary>
-                </div>
-              )}
-
-              {activeTab === 'corner-detail' && (
-                <div>
-                  <ErrorBoundary>
-                    <Section title="Corner Detail">
-                      <CornerDetailTable sessions={store.activeSessions} />
-                    </Section>
-                  </ErrorBoundary>
-                </div>
-              )}
-
-              {activeTab === 'traces' && (
-                <div>
-                  <ErrorBoundary>
-                    <Section title="Throttle &amp; Brake Trace">
-                      <TraceChart sessions={store.activeSessions} />
-                    </Section>
-                  </ErrorBoundary>
-                </div>
-              )}
-
-              {activeTab === 'analysis' && (
-                <div className="space-y-4">
-                  <ErrorBoundary>
-                    <Section title="Lap Delta by Corner">
-                      <LapDeltaChart sessions={store.activeSessions} />
-                    </Section>
-                  </ErrorBoundary>
-                </div>
-              )}
-
-              {activeTab === 'lap-delta' && (
-                <div>
-                  <ErrorBoundary>
-                    <Section title="Lap Delta by Corner">
-                      <LapDeltaChart sessions={store.activeSessions} />
-                    </Section>
-                  </ErrorBoundary>
-                </div>
-              )}
-
-              {activeTab === 'thermals' && (
-                <div>
-                  <ErrorBoundary>
-                    <Section title="Thermal Trends">
-                      <ThermalChart sessions={store.activeSessions} />
-                    </Section>
-                  </ErrorBoundary>
-                </div>
-              )}
-
-              {activeTab === 'development' && (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  <ErrorBoundary>
-                    <Section title="Friction Circle">
-                      <FrictionScatterChart sessions={store.activeSessions} />
-                    </Section>
-                  </ErrorBoundary>
-                  <ErrorBoundary>
-                    <Section title="Driver Development Radar">
-                      <FrictionCircleChart sessions={store.activeSessions} />
-                    </Section>
-                  </ErrorBoundary>
-                </div>
-              )}
-
-              {activeTab === 'readiness' && (
-                <ErrorBoundary>
-                  <Section title="Driver Readiness">
-                    <ReadinessTab
-                      sessionDates={store.activeSessions.map(s => s.data.header.date)}
-                      connectedOverride={whoopConnected}
-                    />
-                  </Section>
-                </ErrorBoundary>
-              )}
+                );
+              })}
             </div>
           )}
-        </main>
+
+          {/* Content */}
+          <main className="flex-1 overflow-y-auto scroll-touch p-4 pb-[calc(80px+env(safe-area-inset-bottom))] xl:pb-4"
+            style={{ background: '#0A0A12' }}>
+            {renderTabContent(activeTab)}
+          </main>
+        </div>
       </div>
 
-      {/* Mobile bottom tab bar */}
-      <nav className="fixed bottom-0 left-0 right-0 z-30 xl:hidden flex items-center justify-around h-16 border-t border-[#2E2E3C]"
+      {/* ── Mobile bottom tab bar ─────────────────────────────────────────── */}
+      <nav
+        className="fixed bottom-0 left-0 right-0 z-30 xl:hidden flex items-center justify-around border-t border-[#1E1E28]"
         style={{
-          background: 'rgba(26,26,34,0.96)',
+          height: 'calc(56px + env(safe-area-inset-bottom))',
+          paddingBottom: 'env(safe-area-inset-bottom)',
+          background: 'rgba(8,8,16,0.97)',
           backdropFilter: 'blur(16px)',
           WebkitBackdropFilter: 'blur(16px)',
-          paddingBottom: 'env(safe-area-inset-bottom)',
-        }}>
-        {MOBILE_TABS.map(tab => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className="flex flex-col items-center justify-center gap-1 flex-1 h-full"
-            style={{
-              color: activeTab === tab.id ? '#3B82F6' : '#606070',
-              borderTop: activeTab === tab.id ? '2px solid #3B82F6' : '2px solid transparent',
-            }}
-          >
-            <tab.Icon size={20} strokeWidth={activeTab === tab.id ? 2 : 1.5} />
-            <span style={{ fontFamily: 'Rajdhani', fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-              {tab.label}
-            </span>
-          </button>
-        ))}
+        }}
+      >
+        {MOBILE_TABS.map(tab => {
+          const active = activeTab === tab.id;
+          return (
+            <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+              className="flex flex-col items-center justify-center gap-0.5 flex-1 h-full transition-colors"
+              style={{
+                color: active ? '#1C69D4' : '#404058',
+                borderTop: active ? '2px solid #1C69D4' : '2px solid transparent',
+              }}>
+              <tab.Icon size={20} strokeWidth={active ? 2 : 1.5} />
+              <span style={{ fontFamily: 'Barlow Condensed', fontSize: '9px', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+                {tab.label}
+              </span>
+            </button>
+          );
+        })}
       </nav>
 
       <InstallPrompt />
@@ -494,29 +441,35 @@ export default function App() {
   );
 }
 
+// ── Section wrapper ───────────────────────────────────────────────────────────
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="card overflow-hidden">
-      <div className="flex items-center gap-2 px-4 py-3 border-b border-[#2E2E3C]">
-        <div className="w-1 h-4 rounded-full bg-[#3B82F6]" />
-        <h2 style={{ fontFamily: 'Rajdhani', fontSize: '14px', fontWeight: 600, letterSpacing: '0.05em', color: '#E8E8F0' }}>{title}</h2>
+    <div className="overflow-hidden rounded-lg mb-4" style={{ background: '#0E0E18', border: '1px solid #1E1E28' }}>
+      <div className="flex items-center gap-2 px-4 py-3 border-b border-[#1E1E28]">
+        <div className="w-0.5 h-4 rounded-full" style={{ background: '#1C69D4' }} />
+        <h2 style={{ fontFamily: 'Barlow Condensed', fontSize: '13px', fontWeight: 600, letterSpacing: '0.12em', color: '#C0C0D0', textTransform: 'uppercase' }}>
+          {title}
+        </h2>
       </div>
-      <div className="p-4">
-        {children}
-      </div>
+      <div className="p-4">{children}</div>
     </div>
   );
 }
 
+// ── Empty state ───────────────────────────────────────────────────────────────
 function EmptyDashboard() {
   return (
-    <div className="flex flex-col items-center justify-center h-full gap-4 p-8 text-center">
-      <div style={{ opacity: 0.15 }}>
-        <img src={bmwMLogo} alt="" className="w-16 h-16" style={{ filter: 'brightness(10)', mixBlendMode: 'screen' }} />
-      </div>
-      <div>
-        <p style={{ fontFamily: 'Rajdhani', fontSize: '16px', fontWeight: 600, letterSpacing: '0.05em', color: '#606070' }}>No session loaded</p>
-        <p style={{ fontFamily: 'Rajdhani', fontSize: '12px', color: '#38384A', marginTop: 4 }}>Drop a RaceChrono CSV file or load from Drive</p>
+    <div className="flex flex-col items-center justify-center h-full gap-6 p-8 text-center min-h-[400px]">
+      <img src={bmwMLogo} alt="" aria-hidden="true"
+        className="w-20 h-20 object-contain"
+        style={{ mixBlendMode: 'screen', filter: 'brightness(1.1)', opacity: 0.12 }} />
+      <div className="space-y-1">
+        <p style={{ fontFamily: 'Barlow Condensed', fontSize: '18px', fontWeight: 600, letterSpacing: '0.1em', color: '#404058', textTransform: 'uppercase' }}>
+          No session loaded
+        </p>
+        <p style={{ fontFamily: 'Barlow Condensed', fontSize: '12px', letterSpacing: '0.08em', color: '#2E2E3C', textTransform: 'uppercase' }}>
+          Drop a RaceChrono CSV or load from Drive
+        </p>
       </div>
     </div>
   );
