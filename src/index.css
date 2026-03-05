@@ -3,7 +3,30 @@
 @tailwind utilities;
 
 @layer base {
-  :root { color-scheme: dark; }
+  /* ── shadcn/ui dark theme variables ─────────────────────────────────────── */
+  :root {
+    color-scheme: dark;
+    --background:       220 20% 5%;
+    --foreground:       220 15% 92%;
+    --card:             220 20% 7%;
+    --card-foreground:  220 15% 92%;
+    --popover:          220 20% 8%;
+    --popover-foreground: 220 15% 92%;
+    --primary:          213 75% 46%;    /* BMW blue */
+    --primary-foreground: 0 0% 100%;
+    --secondary:        220 18% 12%;
+    --secondary-foreground: 220 15% 70%;
+    --muted:            220 18% 12%;
+    --muted-foreground: 220 10% 40%;
+    --accent:           220 18% 14%;
+    --accent-foreground: 220 15% 80%;
+    --destructive:      0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --border:           220 18% 13%;
+    --input:            220 18% 13%;
+    --ring:             213 75% 46%;
+    --radius:           0.5rem;
+  }
 
   * {
     box-sizing: border-box;
@@ -14,47 +37,25 @@
 
   html, body, #root {
     height: 100%;
-    background: #0F0F14;
+    background: #0A0A12;
     overscroll-behavior: none;
   }
 
   body {
-    font-family: 'Rajdhani', system-ui, sans-serif;
+    font-family: 'Barlow Condensed', system-ui, sans-serif;
     font-size: 14px;
     color: #E8E8F0;
   }
 
   ::-webkit-scrollbar { width: 4px; height: 4px; }
   ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: #38384A; border-radius: 2px; }
-  ::-webkit-scrollbar-thumb:hover { background: #4A4A5C; }
+  ::-webkit-scrollbar-thumb { background: #2A2A38; border-radius: 2px; }
+  ::-webkit-scrollbar-thumb:hover { background: #3A3A4C; }
 }
 
 @layer components {
-  .card {
-    background: #1A1A22;
-    border: 1px solid #2E2E3C;
-    border-radius: 12px;
-  }
-  .card-elevated {
-    background: #242430;
-    border: 1px solid #38384A;
-    border-radius: 12px;
-  }
   .scroll-touch {
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
   }
-  .no-select {
-    -webkit-user-select: none;
-    user-select: none;
-  }
-}
-
-@keyframes chart-reveal {
-  from { clip-path: inset(0 100% 0 0); }
-  to   { clip-path: inset(0 0% 0 0); }
-}
-.chart-animate {
-  animation: chart-reveal 600ms ease-out forwards;
 }
