@@ -3,6 +3,7 @@ import { Upload, FileJson } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import type { SessionSummary } from '@/types/session';
+import { parseRacechronoCsv } from '@/lib/parseRacechronoCsv';
 
 interface DropZoneProps {
   onSessionLoaded: (filename: string, data: SessionSummary) => { ok: boolean; error?: string };
@@ -12,23 +13,37 @@ export function DropZone({ onSessionLoaded }: DropZoneProps) {
   const [isDragging, setIsDragging] = useState(false);
 
   const processFile = useCallback((file: File) => {
-    if (!file.name.endsWith('.json')) {
-      toast.error(`"${file.name}" is not a JSON file.`);
+    const isCsv = file.name.endsWith('.csv');
+    const isJson = file.name.endsWith('.json');
+
+    if (!isJson && !isCsv) {
+      toast.error(`"${file.name}" is not a JSON or CSV file.`);
       return;
     }
 
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
-        const parsed = JSON.parse(e.target?.result as string);
-        const result = onSessionLoaded(file.name, parsed);
-        if (result.ok) {
-          toast.success(`Loaded: ${file.name}`);
+        const content = e.target?.result as string;
+        if (isCsv) {
+          const parsed = parseRacechronoCsv(content);
+          const result = onSessionLoaded(file.name, parsed);
+          if (result.ok) {
+            toast.success(`Loaded: ${file.name}`);
+          } else {
+            toast.error(result.error ?? 'Unknown error.');
+          }
         } else {
-          toast.error(result.error ?? 'Unknown error.');
+          const parsed = JSON.parse(content);
+          const result = onSessionLoaded(file.name, parsed);
+          if (result.ok) {
+            toast.success(`Loaded: ${file.name}`);
+          } else {
+            toast.error(result.error ?? 'Unknown error.');
+          }
         }
-      } catch {
-        toast.error(`Could not parse "${file.name}" as JSON.`);
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : `Could not parse "${file.name}".`);
       }
     };
     reader.readAsText(file);
@@ -59,7 +74,7 @@ export function DropZone({ onSessionLoaded }: DropZoneProps) {
     >
       <input
         type="file"
-        accept=".json"
+        accept=".json,.csv"
         multiple
         className="sr-only"
         onChange={onInputChange}
@@ -69,7 +84,7 @@ export function DropZone({ onSessionLoaded }: DropZoneProps) {
         <FileJson size={20} />
       </div>
       <p className="text-sm text-slate-400 text-center">
-        Drop session JSON files here or <span className="text-blue-400 underline">click to browse</span>
+        Drop session JSON or CSV files here or <span className="text-blue-400 underline">click to browse</span>
       </p>
       <p className="text-xs text-slate-600">Multiple files supported</p>
     </label>

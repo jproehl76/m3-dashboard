@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { HardDrive, Loader2 } from 'lucide-react';
 import { openDrivePicker, fetchDriveFileContent } from '@/lib/services/googleDrive';
 import type { SessionSummary } from '@/types/session';
+import { parseRacechronoCsv } from '@/lib/parseRacechronoCsv';
 
 interface Props {
   onSessionLoaded: (filename: string, data: SessionSummary) => { ok: boolean; error?: string };
@@ -33,8 +34,14 @@ export function DrivePickerButton({ onSessionLoaded }: Props) {
       const selection = await openDrivePicker(accessToken);
       if (!selection) return;
       const content = await fetchDriveFileContent(selection.fileId, accessToken);
-      const parsed = JSON.parse(content) as unknown;
-      const result = onSessionLoaded(selection.filename, parsed as SessionSummary);
+      const isCsv = selection.filename.toLowerCase().endsWith('.csv') || content.trimStart().startsWith('This file is created using RaceChrono');
+      let parsed: SessionSummary;
+      if (isCsv) {
+        parsed = parseRacechronoCsv(content);
+      } else {
+        parsed = JSON.parse(content) as SessionSummary;
+      }
+      const result = onSessionLoaded(selection.filename, parsed);
       if (!result.ok) {
         toast.error(result.error ?? 'Failed to load session.');
       }
