@@ -1,12 +1,12 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import * as d3 from 'd3';
 import type { LoadedSession, BestLapCorner } from '@/types/session';
 import { KPH_TO_MPH, M_TO_FEET, sessionLabel } from '@/lib/utils';
-import { findTrackLayout } from '@/assets/trackLayouts';
+import { findTrackLayout, type TrackLayout } from '@/assets/trackLayouts';
 
 const SVG_W = 560;
 const SVG_H = 500;
-const PAD  = 44;
+const PAD  = 40;
 
 // ── Projection ────────────────────────────────────────────────────────────────
 function buildProjection(points: { lat: number; lon: number }[]) {
@@ -20,23 +20,56 @@ function buildProjection(points: { lat: number; lon: number }[]) {
   );
 }
 
-function buildRefPath(waypoints: [number, number][], proj: d3.GeoProjection): string {
+function buildPath(waypoints: [number, number][], proj: d3.GeoProjection, close = true): string {
   const pts = waypoints.map(([lat, lon]) => proj([lon, lat])).filter(Boolean) as [number, number][];
   if (pts.length < 2) return '';
-  return pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ') + 'Z';
+  return pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ') + (close ? 'Z' : '');
 }
 
-// ── Corner apex positions from GPS trace ──────────────────────────────────────
-interface Apex { id: string; name: string; x: number; y: number; corner: BestLapCorner }
+// ── Corner apex positions ─────────────────────────────────────────────────────
+interface Apex {
+  id: string;
+  name: string;
+  x: number;
+  y: number;
+  corner: BestLapCorner | null; // null = reference position only, no session data matched
+}
 
-function computeApexes(
+/** Match a reference corner ID/name to a session corner (case-insensitive, strips non-alphanum) */
+function matchCorner(rcId: string, rcName: string, sessionCorners: BestLapCorner[]): BestLapCorner | null {
+  const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+  return sessionCorners.find(c =>
+    norm(c.corner_id) === norm(rcId) ||
+    norm(c.corner_name) === norm(rcName) ||
+    norm(c.corner_name) === norm(rcId)
+  ) ?? null;
+}
+
+/**
+ * Build apex list.
+ * - When refLayout is present: project its corner GPS positions (accurate, ON the track).
+ * - When no refLayout: divide GPS trace into equal chunks and find min-speed point in each
+ *   (approximate, but correct relative to the GPS-drawn outline).
+ */
+function buildApexes(
+  refLayout: TrackLayout | null,
   trace: { lat: number; lon: number; speed_kph: number }[],
-  corners: BestLapCorner[],
+  sessionCorners: BestLapCorner[],
   proj: d3.GeoProjection
 ): Apex[] {
-  if (!trace.length || !corners.length) return [];
-  const chunk = Math.ceil(trace.length / corners.length);
-  return corners.flatMap((c, i) => {
+  if (refLayout && refLayout.corners.length > 0) {
+    return refLayout.corners.flatMap(rc => {
+      const xy = proj([rc.lon, rc.lat]);
+      if (!xy) return [];
+      const sc = matchCorner(rc.id, rc.name, sessionCorners);
+      return [{ id: rc.id, name: rc.name, x: xy[0], y: xy[1], corner: sc }];
+    });
+  }
+
+  // Fallback: GPS trace chunks
+  if (!trace.length || !sessionCorners.length) return [];
+  const chunk = Math.ceil(trace.length / sessionCorners.length);
+  return sessionCorners.flatMap((c, i) => {
     const slice = trace.slice(i * chunk, Math.min((i + 1) * chunk, trace.length));
     if (!slice.length) return [];
     const apex = slice.reduce((m, p) => p.speed_kph < m.speed_kph ? p : m, slice[0]);
@@ -52,37 +85,37 @@ function CornerCard({ corner, onClose }: { corner: BestLapCorner; onClose: () =>
   const ft  = (m: number) => (m * M_TO_FEET).toFixed(0);
 
   return (
-    <div className="shrink-0 border-t border-border p-4 bg-card/50">
-      <div className="flex items-center justify-between mb-3">
+    <div className="shrink-0 border-t border-border p-3 bg-card/50">
+      <div className="flex items-center justify-between mb-2.5">
         <span className="text-sm font-bold tracking-widest text-foreground uppercase">{corner.corner_name}</span>
-        <button onClick={onClose} className="text-muted-foreground hover:text-destructive transition-colors text-xs tracking-widest uppercase">
+        <button onClick={onClose} className="text-muted-foreground hover:text-destructive transition-colors text-[10px] tracking-widest uppercase">
           ✕ close
         </button>
       </div>
 
-      <div className="grid grid-cols-3 gap-2 mb-2">
+      <div className="grid grid-cols-3 gap-1.5 mb-1.5">
         {[
           { label: 'Entry', val: mph(corner.entry_speed_kph), color: '#3B82F6' },
           { label: 'Apex',  val: mph(corner.min_speed_kph),   color: '#A855F7' },
           { label: 'Exit',  val: mph(corner.exit_speed_kph),  color: '#22C55E' },
         ].map(s => (
-          <div key={s.label} className="rounded-lg p-2.5 text-center bg-background border border-border">
-            <div className="text-[9px] tracking-widest text-muted-foreground uppercase mb-1">{s.label}</div>
-            <div style={{ fontFamily: 'JetBrains Mono', fontSize: '18px', fontWeight: 600, color: s.color, lineHeight: 1 }}>{s.val}</div>
-            <div className="text-[9px] text-muted-foreground mt-1">mph</div>
+          <div key={s.label} className="rounded p-2 text-center bg-background border border-border">
+            <div className="text-[8px] tracking-widest text-muted-foreground uppercase mb-0.5">{s.label}</div>
+            <div style={{ fontFamily: 'JetBrains Mono', fontSize: '17px', fontWeight: 600, color: s.color, lineHeight: 1 }}>{s.val}</div>
+            <div className="text-[8px] text-muted-foreground mt-0.5">mph</div>
           </div>
         ))}
       </div>
 
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-3 gap-1.5">
         {[
           { label: 'Brake',  val: corner.brake_point_m > 0 ? `${ft(corner.brake_point_m)}ft` : '—', warn: false },
           { label: 'Coast',  val: corner.coast_time_s > 0.05 ? `${corner.coast_time_s.toFixed(2)}s` : 'none', warn: corner.coast_time_s > 0.2 },
           { label: 'Peak G', val: `${corner.peak_lat_g.toFixed(2)}G`, warn: false },
         ].map(s => (
-          <div key={s.label} className="rounded-lg p-2 text-center bg-background border border-border">
-            <div className="text-[9px] tracking-widest text-muted-foreground uppercase mb-1">{s.label}</div>
-            <div style={{ fontFamily: 'JetBrains Mono', fontSize: '13px', fontWeight: 600, color: s.warn ? '#F59E0B' : undefined }}
+          <div key={s.label} className="rounded p-1.5 text-center bg-background border border-border">
+            <div className="text-[8px] tracking-widest text-muted-foreground uppercase mb-0.5">{s.label}</div>
+            <div style={{ fontFamily: 'JetBrains Mono', fontSize: '12px', fontWeight: 600, color: s.warn ? '#F59E0B' : undefined }}
               className={s.warn ? '' : 'text-muted-foreground'}>{s.val}</div>
           </div>
         ))}
@@ -100,6 +133,7 @@ export interface TrackMapProps {
 }
 
 export function TrackMapChart({ sessions, variant = 'chart', selectedCornerId, onCornerSelect }: TrackMapProps) {
+  const [hovered, setHovered] = useState<string | null>(null);
   const session = sessions[0];
   const trace   = session?.data.gps_trace ?? [];
 
@@ -111,22 +145,27 @@ export function TrackMapChart({ sessions, variant = 'chart', selectedCornerId, o
     return null;
   }, [refLayout, trace]);
 
-  const refPath = useMemo(() => proj && refLayout ? buildRefPath(refLayout.waypoints, proj) : '', [proj, refLayout]);
-  // Bridge section drawn on top to simulate the T1-approach overpass above T11-return
+  const refPath = useMemo(() => proj && refLayout ? buildPath(refLayout.waypoints, proj) : '', [proj, refLayout]);
+
   const bridgePath = useMemo(() => {
     if (!proj || !refLayout?.bridgeWaypoints) return '';
-    const pts = refLayout.bridgeWaypoints.map(([lat, lon]) => proj([lon, lat])).filter(Boolean) as [number, number][];
-    return pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ');
+    return buildPath(refLayout.bridgeWaypoints, proj, false);
   }, [proj, refLayout]);
 
+  // GPS trace fallback path (when no reference layout)
+  const tracePath = useMemo(() => {
+    if (refLayout || !proj || trace.length < 2) return '';
+    return buildPath(trace.map(p => [p.lat, p.lon]), proj);
+  }, [refLayout, trace, proj]);
+
   const apexes = useMemo(
-    () => (proj && session ? computeApexes(trace, session.data.best_lap_corners, proj) : []),
-    [trace, session, proj]
+    () => proj ? buildApexes(refLayout, trace, session?.data.best_lap_corners ?? [], proj) : [],
+    [refLayout, trace, session, proj]
   );
 
   const selApex = apexes.find(a => a.id === selectedCornerId);
-
   const trackName = session?.data.header.track || 'Track Map';
+  const accentColor = refLayout?.colors.primary ?? '#1C69D4';
 
   if (!session) {
     return (
@@ -142,55 +181,64 @@ export function TrackMapChart({ sessions, variant = 'chart', selectedCornerId, o
       style={{ height: variant === 'panel' ? '100%' : undefined }}>
 
       {/* Header */}
-      <div className="flex items-center justify-between px-3 py-2 border-b border-border shrink-0">
-        <span className="text-xs tracking-widest text-muted-foreground uppercase">{trackName}</span>
+      <div className="flex items-center justify-between px-3 py-1.5 border-b border-border shrink-0">
+        <span className="text-[10px] tracking-widest text-muted-foreground uppercase">{trackName}</span>
         {sessions.length > 1 && (
           <div className="flex gap-1">
             {sessions.map(s => (
-              <span key={s.id} className="text-[10px] px-2 py-0.5 rounded border border-border text-muted-foreground" style={{ borderColor: s.color, color: s.color }}>
+              <span key={s.id} className="text-[9px] px-1.5 py-0.5 rounded border text-muted-foreground"
+                style={{ borderColor: s.color, color: s.color }}>
                 {sessionLabel(s)}
               </span>
             ))}
           </div>
         )}
-        <span className="text-[10px] tracking-widest text-muted-foreground/40 uppercase">tap corner for data</span>
+        <span className="text-[9px] tracking-widest text-muted-foreground/40 uppercase">tap corner</span>
       </div>
 
-      {/* SVG */}
+      {/* SVG map */}
       <div className="w-full min-h-0"
-        style={{ flex: variant === 'panel' ? '1 1 0' : undefined, aspectRatio: variant === 'chart' ? `${SVG_W}/${SVG_H}` : undefined, padding: '0 8px' }}>
+        style={{ flex: variant === 'panel' ? '1 1 0' : undefined, aspectRatio: variant === 'chart' ? `${SVG_W}/${SVG_H}` : undefined }}>
         <svg viewBox={`0 0 ${SVG_W} ${SVG_H}`} width="100%" height="100%" style={{ display: 'block' }}>
           <defs>
             <filter id="cGlow" x="-100%" y="-100%" width="300%" height="300%">
-              <feGaussianBlur in="SourceGraphic" stdDeviation="5" result="b" />
+              <feGaussianBlur in="SourceGraphic" stdDeviation="6" result="b" />
+              <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
+            </filter>
+            <filter id="hGlow" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="b" />
               <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
             </filter>
           </defs>
 
           <rect width={SVG_W} height={SVG_H} fill="#08080E" />
 
-          {/* Reference track */}
-          {refPath && (
+          {/* Reference track outline */}
+          {(refPath || tracePath) && (() => {
+            const d = refPath || tracePath;
+            return (
+              <>
+                <path d={d} fill="none" stroke="#1C1C28" strokeWidth={18} strokeLinejoin="round" strokeLinecap="round" />
+                <path d={d} fill="none" stroke="#0E0E1A" strokeWidth={13} strokeLinejoin="round" strokeLinecap="round" />
+                <path d={d} fill="none" stroke="#2A2A3C" strokeWidth={1.5} strokeLinejoin="round" strokeLinecap="round" opacity={0.7} />
+              </>
+            );
+          })()}
+
+          {/* Bridge overpass — drawn on top */}
+          {bridgePath && (
             <>
-              <path d={refPath} fill="none" stroke="#1A1A26" strokeWidth={16} strokeLinejoin="round" strokeLinecap="round" />
-              <path d={refPath} fill="none" stroke="#101018" strokeWidth={12} strokeLinejoin="round" strokeLinecap="round" />
-              <path d={refPath} fill="none" stroke="#252538" strokeWidth={1.5} strokeLinejoin="round" strokeLinecap="round" opacity={0.6} />
-              {/* Bridge overpass — drawn on top so T1-approach appears above T11-return */}
-              {bridgePath && (
-                <>
-                  <path d={bridgePath} fill="none" stroke="#1A1A26" strokeWidth={16} strokeLinecap="round" />
-                  <path d={bridgePath} fill="none" stroke="#141420" strokeWidth={12} strokeLinecap="round" />
-                  <path d={bridgePath} fill="none" stroke="#2E2E44" strokeWidth={1.5} strokeLinecap="round" opacity={0.8} />
-                </>
-              )}
+              <path d={bridgePath} fill="none" stroke="#1C1C28" strokeWidth={18} strokeLinecap="round" />
+              <path d={bridgePath} fill="none" stroke="#141420" strokeWidth={13} strokeLinecap="round" />
+              <path d={bridgePath} fill="none" stroke="#303048" strokeWidth={1.5} strokeLinecap="round" opacity={0.8} />
             </>
           )}
 
           {/* No-track fallback */}
-          {!refPath && !proj && (
+          {!refPath && !tracePath && (
             <text x={SVG_W / 2} y={SVG_H / 2} textAnchor="middle" dominantBaseline="middle"
-              style={{ fontFamily: 'BMWTypeNext', fontSize: '11px', letterSpacing: '0.2em', fill: '#252535', textTransform: 'uppercase' }}>
-              No track reference — load Road Atlanta session
+              style={{ fontFamily: 'BMWTypeNext', fontSize: '10px', letterSpacing: '0.2em', fill: '#252535', textTransform: 'uppercase' }}>
+              No GPS data — load a session
             </text>
           )}
 
@@ -200,9 +248,9 @@ export function TrackMapChart({ sessions, variant = 'chart', selectedCornerId, o
             if (!pt) return null;
             return (
               <g>
-                <line x1={pt[0] - 7} y1={pt[1]} x2={pt[0] + 7} y2={pt[1]} stroke="#4A4A60" strokeWidth={2} />
-                <text x={pt[0]} y={pt[1] - 9} textAnchor="middle"
-                  style={{ fontFamily: 'BMWTypeNext', fontSize: '8px', letterSpacing: '0.15em', fill: '#383848', textTransform: 'uppercase' }}>
+                <line x1={pt[0] - 8} y1={pt[1]} x2={pt[0] + 8} y2={pt[1]} stroke={accentColor} strokeWidth={2} opacity={0.6} />
+                <text x={pt[0]} y={pt[1] - 10} textAnchor="middle"
+                  style={{ fontFamily: 'BMWTypeNext', fontSize: '7px', letterSpacing: '0.18em', fill: accentColor, opacity: 0.5, textTransform: 'uppercase' }}>
                   S/F
                 </text>
               </g>
@@ -212,17 +260,39 @@ export function TrackMapChart({ sessions, variant = 'chart', selectedCornerId, o
           {/* Corner markers */}
           {apexes.map(a => {
             const sel = selectedCornerId === a.id;
+            const hov = hovered === a.id;
+            const hasData = a.corner !== null;
+            const active = sel || hov;
+
             return (
-              <g key={a.id} style={{ cursor: 'pointer' }}
-                filter={sel ? 'url(#cGlow)' : undefined}
-                onClick={() => onCornerSelect?.(sel ? null : a.id)}>
-                {sel && <circle cx={a.x} cy={a.y} r={18} fill="none" stroke="#A855F7" strokeWidth={1} opacity={0.35} />}
-                <circle cx={a.x} cy={a.y} r={sel ? 12 : 9}
-                  fill={sel ? '#A855F7' : '#0D0D18'}
-                  stroke={sel ? '#A855F7' : '#2E2E48'} strokeWidth={1.5} />
+              <g key={a.id}
+                style={{ cursor: hasData ? 'pointer' : 'default' }}
+                filter={sel ? 'url(#cGlow)' : hov ? 'url(#hGlow)' : undefined}
+                onClick={() => hasData && onCornerSelect?.(sel ? null : a.id)}
+                onMouseEnter={() => setHovered(a.id)}
+                onMouseLeave={() => setHovered(null)}>
+
+                {/* Selection ring */}
+                {sel && <circle cx={a.x} cy={a.y} r={20} fill="none" stroke={accentColor} strokeWidth={1} opacity={0.3} />}
+
+                {/* Dot */}
+                <circle cx={a.x} cy={a.y}
+                  r={sel ? 13 : active ? 11 : 9}
+                  fill={sel ? accentColor : active ? `${accentColor}30` : '#0D0D1A'}
+                  stroke={sel ? accentColor : active ? accentColor : hasData ? '#303048' : '#202030'}
+                  strokeWidth={sel ? 2 : 1.5}
+                />
+
+                {/* Label */}
                 <text x={a.x} y={a.y + 0.5} textAnchor="middle" dominantBaseline="middle"
-                  style={{ fontFamily: 'BMWTypeNext', fontSize: sel ? '9px' : '8px', fontWeight: 700,
-                    fill: sel ? '#FFF' : '#7070A0', userSelect: 'none', pointerEvents: 'none' }}>
+                  style={{
+                    fontFamily: 'BMWTypeNext',
+                    fontSize: sel ? '9px' : '8px',
+                    fontWeight: 700,
+                    fill: sel ? '#FFF' : hasData ? '#8080A8' : '#404050',
+                    userSelect: 'none',
+                    pointerEvents: 'none',
+                  }}>
                   {a.name}
                 </text>
               </g>
@@ -231,8 +301,8 @@ export function TrackMapChart({ sessions, variant = 'chart', selectedCornerId, o
         </svg>
       </div>
 
-      {/* Corner card */}
-      {selApex && <CornerCard corner={selApex.corner} onClose={() => onCornerSelect?.(null)} />}
+      {/* Corner data card */}
+      {selApex?.corner && <CornerCard corner={selApex.corner} onClose={() => onCornerSelect?.(null)} />}
     </div>
   );
 }

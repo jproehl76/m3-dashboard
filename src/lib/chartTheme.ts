@@ -2,9 +2,9 @@ export const CHART_MARGINS = { top: 10, right: 12, bottom: 28, left: 56 };
 export const CHART_MARGINS_MOBILE = { top: 6, right: 6, bottom: 22, left: 44 };
 
 export const AXIS_STYLE = {
-  tick: { fill: '#505060', fontSize: 11, fontFamily: 'BMWTypeNext', letterSpacing: '0.05em' },
-  axisLine: { stroke: '#252535' },
-  tickLine: { stroke: '#252535' },
+  tick: { fill: '#8080A0', fontSize: 11, fontFamily: 'BMWTypeNext', letterSpacing: '0.05em' },
+  axisLine: { stroke: '#2A2A3A' },
+  tickLine: { stroke: '#2A2A3A' },
 };
 
 export const GRID_STYLE = {

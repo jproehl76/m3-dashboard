@@ -24,8 +24,9 @@ import { handleWhoopCallback } from '@/lib/services/whoopAuth';
 import { usePersistedSessions } from '@/lib/usePersistedSessions';
 import { sessionLabel, formatLapTime } from '@/lib/utils';
 import { useMemory } from '@/hooks/useMemory';
+import { LapInfoPanel } from '@/components/LapInfoPanel';
+import { findTrackLayout } from '@/assets/trackLayouts';
 import React from 'react';
-import trackPhoto from '@/assets/m3-track.jpg';
 
 const AUTH_KEY = 'm3-auth-user';
 
@@ -101,6 +102,12 @@ export default function App() {
   const bestLapDisplay = bestSession ? formatLapTime(bestSession.data.consistency.best_lap_s) : null;
   const sessionDates = store.activeSessions.map(s => s.data.header.date);
 
+  // Track branding for header
+  const activeTrackLayout = findTrackLayout(store.activeSessions[0]?.data.header.track);
+  const trackPrimary = activeTrackLayout?.colors.primary ?? '#1C69D4';
+  const trackAccent  = activeTrackLayout?.colors.accent  ?? '#A855F7';
+  const trackLogo    = activeTrackLayout?.logo;
+
   function renderTabContent(tab: string) {
     if (store.activeSessions.length === 0) return <EmptyDashboard />;
     switch (tab) {
@@ -175,31 +182,40 @@ export default function App() {
       <Toaster position="bottom-right" richColors />
 
       {/* ── HEADER ── */}
-      <header className="relative shrink-0 overflow-hidden" style={{ height: 'clamp(64px, 12vh, 140px)' }}>
-        {/* Track photo — car is at ~55% from top */}
-        <img src={trackPhoto} alt="" aria-hidden
-          className="absolute inset-0 w-full h-full object-cover"
-          style={{ objectPosition: 'center 55%', opacity: 0.5 }} />
-
-        {/* Gradients */}
+      <header className="relative shrink-0 overflow-hidden" style={{ height: 'clamp(60px, 11vh, 120px)' }}>
+        {/* CSS motorsport background — adapts to track colors */}
         <div className="absolute inset-0" style={{
-          background: 'linear-gradient(to right, rgba(10,10,18,0.97) 0%, rgba(10,10,18,0.82) 35%, rgba(10,10,18,0.35) 65%, rgba(10,10,18,0.72) 100%)'
+          background: `
+            linear-gradient(105deg,
+              #08080E 0%,
+              #0C0C18 25%,
+              ${trackPrimary}18 55%,
+              ${trackAccent}08 80%,
+              #08080E 100%
+            )
+          `,
         }} />
+        {/* Subtle diagonal stripe texture */}
         <div className="absolute inset-0" style={{
-          background: 'linear-gradient(to bottom, rgba(10,10,18,0.3) 0%, rgba(10,10,18,0.0) 40%, rgba(10,10,18,0.75) 100%)'
+          backgroundImage: `repeating-linear-gradient(
+            -55deg,
+            transparent,
+            transparent 12px,
+            rgba(255,255,255,0.012) 12px,
+            rgba(255,255,255,0.012) 13px
+          )`,
         }} />
 
         <div className="relative z-10 flex items-center h-full px-4 gap-3">
-          {/* BMW M stripes — inline CSS, no image file needed */}
-          <div className="shrink-0 flex items-center gap-[3px]"
-            style={{ height: 'clamp(26px, 5vh, 46px)' }}>
+          {/* BMW M stripes */}
+          <div className="shrink-0 flex items-center gap-[3px]" style={{ height: 'clamp(24px, 4.5vh, 42px)' }}>
             {[
               { color: '#1C69D4', shadow: '#1C69D460' },
               { color: '#6B2D9E', shadow: '#6B2D9E60' },
               { color: '#EF3340', shadow: '#EF334060' },
             ].map((stripe, i) => (
               <div key={i} style={{
-                width: 'clamp(4px, 0.8vh, 8px)',
+                width: 'clamp(4px, 0.7vh, 7px)',
                 height: '100%',
                 background: stripe.color,
                 borderRadius: '1px',
@@ -212,7 +228,7 @@ export default function App() {
           <div className="flex flex-col justify-center min-w-0">
             <h1 style={{
               fontFamily: 'BMWTypeNext',
-              fontSize: 'clamp(16px, 2.8vh, 30px)',
+              fontSize: 'clamp(14px, 2.5vh, 26px)',
               fontWeight: 700,
               letterSpacing: '0.08em',
               color: '#F0F0FA',
@@ -223,11 +239,11 @@ export default function App() {
             </h1>
             <p className="hidden sm:block" style={{
               fontFamily: 'BMWTypeNext',
-              fontSize: 'clamp(8px, 1.2vh, 11px)',
+              fontSize: 'clamp(7px, 1.1vh, 10px)',
               letterSpacing: '0.22em',
               color: 'hsl(var(--muted-foreground))',
               textTransform: 'uppercase',
-              marginTop: 3,
+              marginTop: 2,
             }}>
               Track Telemetry · Session Analysis
             </p>
@@ -238,7 +254,7 @@ export default function App() {
             <div className="hidden md:flex flex-col items-center absolute left-1/2 -translate-x-1/2">
               <span style={{
                 fontFamily: 'JetBrains Mono',
-                fontSize: 'clamp(20px, 3.8vh, 36px)',
+                fontSize: 'clamp(18px, 3.5vh, 32px)',
                 fontWeight: 600,
                 color: '#A855F7',
                 lineHeight: 1,
@@ -248,7 +264,7 @@ export default function App() {
               </span>
               <span style={{
                 fontFamily: 'BMWTypeNext',
-                fontSize: 'clamp(7px, 1vh, 9px)',
+                fontSize: 'clamp(7px, 0.9vh, 9px)',
                 letterSpacing: '0.25em',
                 color: 'hsl(var(--muted-foreground))',
                 textTransform: 'uppercase',
@@ -259,11 +275,16 @@ export default function App() {
             </div>
           )}
 
-          {/* Right: avatar + sign out */}
+          {/* Right: track logo (when session loaded) + avatar + sign out */}
           <div className="flex items-center gap-3 ml-auto shrink-0">
+            {trackLogo && (
+              <img src={trackLogo} alt={activeTrackLayout?.name}
+                className="hidden sm:block object-contain"
+                style={{ height: 'clamp(20px, 3.5vh, 36px)', maxWidth: 120, opacity: 0.75, filter: 'brightness(1.1)' }} />
+            )}
             {user.picture && (
               <img src={user.picture} alt={user.name} className="rounded-full ring-1 ring-border"
-                style={{ width: 'clamp(22px, 3vh, 28px)', height: 'clamp(22px, 3vh, 28px)' }} />
+                style={{ width: 'clamp(20px, 3vh, 26px)', height: 'clamp(20px, 3vh, 26px)' }} />
             )}
             <button onClick={() => setUser(null)} className="text-muted-foreground hover:text-destructive transition-colors" title="Sign out">
               <LogOut size={14} />
@@ -271,19 +292,23 @@ export default function App() {
           </div>
         </div>
 
-        {/* Bottom accent line */}
+        {/* Bottom accent line — uses track primary color */}
         <div className="absolute bottom-0 left-0 right-0 h-px"
-          style={{ background: 'linear-gradient(to right, transparent, #1C69D4 20%, #A855F7 60%, transparent)' }} />
+          style={{ background: `linear-gradient(to right, transparent, ${trackPrimary} 20%, ${trackAccent}80 60%, transparent)` }} />
       </header>
 
       {/* ── BODY ── */}
       <div className="flex flex-1 min-h-0">
 
         {/* Left panel — desktop lg+ */}
-        <aside className="hidden lg:flex flex-col w-[300px] shrink-0 border-r border-border bg-card">
-          <div className="shrink-0 p-3 space-y-2 border-b border-border">
-            <DropZone onSessionLoaded={store.addSession} />
-            <DrivePickerButton onSessionLoaded={store.addSession} />
+        <aside className="hidden lg:flex flex-col w-[340px] shrink-0 border-r border-border bg-card">
+
+          {/* Session loading controls — compact */}
+          <div className="shrink-0 p-2.5 space-y-2 border-b border-border">
+            <div className="flex gap-2">
+              <div className="flex-1"><DropZone onSessionLoaded={store.addSession} /></div>
+              <DrivePickerButton onSessionLoaded={store.addSession} />
+            </div>
             {store.sessions.length > 0 && (
               <SessionList
                 sessions={store.sessions}
@@ -295,24 +320,26 @@ export default function App() {
               />
             )}
             {store.sessions.length === 0 && (
-              <div className="py-1 space-y-1 text-xs tracking-wider text-muted-foreground uppercase">
-                <p className="text-foreground/60 font-semibold">Getting started</p>
-                <ol className="list-decimal list-inside space-y-0.5 text-muted-foreground">
+              <div className="py-0.5 space-y-0.5 text-[10px] tracking-wider text-muted-foreground uppercase">
+                <ol className="list-decimal list-inside space-y-0.5">
                   <li>Export CSV from RaceChrono</li>
                   <li>Drop here or load from Drive</li>
-                  <li>Load multiple sessions to compare</li>
                 </ol>
               </div>
             )}
             {store.sessions.length > 0 && (
               <button onClick={store.clearSavedSessions}
-                className="text-[10px] tracking-widest text-muted-foreground/30 hover:text-destructive transition-colors uppercase">
+                className="text-[9px] tracking-widest text-muted-foreground/25 hover:text-destructive transition-colors uppercase">
                 Clear saved sessions
               </button>
             )}
           </div>
 
-          <div className="flex-1 min-h-0 p-2">
+          {/* F1-style lap info panel */}
+          <LapInfoPanel sessions={store.activeSessions} />
+
+          {/* Track map — fills remaining space */}
+          <div className="flex-1 min-h-0 p-1.5">
             <TrackMapChart sessions={store.activeSessions} variant="panel"
               selectedCornerId={selectedCornerId} onCornerSelect={setSelectedCornerId} />
           </div>
