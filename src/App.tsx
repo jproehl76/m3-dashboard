@@ -10,7 +10,6 @@ import { CornerSpeedChart } from '@/components/charts/CornerSpeedChart';
 import { ThermalChart } from '@/components/charts/ThermalChart';
 import { FrictionCircleChart } from '@/components/charts/FrictionCircleChart';
 import { CornerDetailTable } from '@/components/charts/CornerDetailTable';
-import { TrackMapChart } from '@/components/charts/TrackMapChart';
 import { TrackHeatMap } from '@/components/charts/TrackHeatMap';
 import { FrictionScatterChart } from '@/components/charts/FrictionScatterChart';
 import { DebriefNotes } from '@/components/DebriefNotes';
@@ -350,10 +349,9 @@ export default function App() {
           {/* F1-style lap info panel */}
           <LapInfoPanel sessions={store.activeSessions} />
 
-          {/* Track map — fills remaining space */}
-          <div className="flex-1 min-h-0 p-1.5">
-            <TrackMapChart sessions={store.activeSessions} variant="panel"
-              selectedCornerId={selectedCornerId} onCornerSelect={setSelectedCornerId} />
+          {/* Lap list — all clean laps with delta */}
+          <div className="flex-1 min-h-0 overflow-y-auto scroll-touch">
+            <LapList sessions={store.activeSessions} />
           </div>
         </aside>
 
@@ -428,6 +426,52 @@ export default function App() {
       </nav>
 
       <InstallPrompt />
+    </div>
+  );
+}
+
+// ── LapList ───────────────────────────────────────────────────────────────────
+// Compact scrollable lap table for the left panel
+function LapList({ sessions }: { sessions: import('@/types/session').LoadedSession[] }) {
+  if (sessions.length === 0) return null;
+  return (
+    <div className="p-2 space-y-3">
+      {sessions.map(session => {
+        const clean = session.data.laps.filter(l => !l.is_outlier);
+        const best = session.data.consistency.best_lap_s;
+        const sorted = [...clean].sort((a, b) => a.lap_time_s - b.lap_time_s);
+        if (clean.length === 0) return null;
+        return (
+          <div key={session.id}>
+            {sessions.length > 1 && (
+              <div style={{ fontFamily: 'BMWTypeNext', fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: session.color, marginBottom: 4 }}>
+                {sessionLabel(session)}
+              </div>
+            )}
+            <div className="space-y-0.5">
+              {sorted.map(lap => {
+                const isBest = lap.lap_time_s === best;
+                const delta  = lap.lap_time_s - best;
+                const deltaColor = isBest ? '#A855F7' : delta < 0.5 ? '#22C55E' : delta < 1.5 ? '#F59E0B' : '#EF4444';
+                return (
+                  <div key={lap.lap_num} className="flex items-center justify-between px-2 py-0.5 rounded"
+                    style={{ background: isBest ? 'rgba(168,85,247,0.08)' : undefined }}>
+                    <span style={{ fontFamily: 'BMWTypeNext', fontSize: '10px', color: isBest ? '#A855F7' : '#9A9AB0', width: 28 }}>
+                      L{lap.lap_num}
+                    </span>
+                    <span style={{ fontFamily: 'JetBrains Mono', fontSize: '12px', fontWeight: isBest ? 700 : 400, color: isBest ? '#A855F7' : '#E8E8F0' }}>
+                      {formatLapTime(lap.lap_time_s)}
+                    </span>
+                    <span style={{ fontFamily: 'JetBrains Mono', fontSize: '10px', color: deltaColor, width: 44, textAlign: 'right' }}>
+                      {isBest ? '●' : `+${delta.toFixed(2)}`}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
