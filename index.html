@@ -3,11 +3,37 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
+    <!-- PWA / iOS home screen -->
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="M3">
     <meta name="theme-color" content="#0F0F14">
+    <meta name="application-name" content="M3 Telemetry">
+    <meta name="description" content="G80 M3 Competition track telemetry dashboard">
+
+    <!-- App icons -->
     <link rel="manifest" href="/m3-dashboard/manifest.json">
+    <link rel="apple-touch-icon" href="/m3-dashboard/icons/apple-touch-icon.png">
+    <link rel="icon" type="image/svg+xml" href="/m3-dashboard/icons/icon.svg">
+
+    <!-- iOS splash screens -->
+    <!-- iPhone 14 Pro Max (1290×2796) -->
+    <link rel="apple-touch-startup-image" media="screen and (device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="/m3-dashboard/splash/iphone-14-pro-max.png">
+    <!-- iPhone 14 Pro (1179×2556) -->
+    <link rel="apple-touch-startup-image" media="screen and (device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="/m3-dashboard/splash/iphone-14-pro.png">
+    <!-- iPhone 14 / 13 / 12 (1170×2532) -->
+    <link rel="apple-touch-startup-image" media="screen and (device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="/m3-dashboard/splash/iphone-14.png">
+    <!-- iPhone 13 Pro Max / 12 Pro Max (1284×2778) -->
+    <link rel="apple-touch-startup-image" media="screen and (device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="/m3-dashboard/splash/iphone-13-pro-max.png">
+    <!-- iPhone X / XS / 11 Pro (1125×2436) -->
+    <link rel="apple-touch-startup-image" media="screen and (device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="/m3-dashboard/splash/iphone-x.png">
+    <!-- iPhone XR / 11 (828×1792) -->
+    <link rel="apple-touch-startup-image" media="screen and (device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" href="/m3-dashboard/splash/iphone-xr.png">
+    <!-- iPhone SE (750×1334) -->
+    <link rel="apple-touch-startup-image" media="screen and (device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" href="/m3-dashboard/splash/iphone-se.png">
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Barlow+Condensed:wght@400;500;600;700&display=swap" rel="stylesheet">
