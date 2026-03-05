@@ -371,6 +371,18 @@ export function TrackHeatMap({ sessions, selectedCornerId, onCornerSelect }: Pro
         </div>
       </div>
 
+      {/* ── GPS missing notice ── */}
+      {trace.length === 0 && (
+        <div className="shrink-0 flex items-center gap-2 px-3 py-2 border-b border-border"
+          style={{ background: `${S.warn}10`, borderColor: `${S.warn}30` }}>
+          <span style={{ color: S.warn, fontSize: 14 }}>⚠</span>
+          <div style={{ fontFamily: FF.sans, fontSize: `${FS.nano}px`, color: S.warn, letterSpacing: '0.06em' }}>
+            No GPS data in this session — track outline shown without heat trace.
+            Re-export from RaceChrono with <strong>Latitude</strong> and <strong>Longitude</strong> channels enabled.
+          </div>
+        </div>
+      )}
+
       {/* ── Map area (canvas + SVG) ── */}
       <div className="relative w-full min-h-0" style={{ flex: '1 1 0' }}>
         <canvas ref={canvasRef}
