@@ -80,6 +80,27 @@ export interface ThermalChannel {
   alert_level: 'ok' | 'watch' | 'critical';
 }
 
+export interface GpsPoint {
+  lat: number;
+  lon: number;
+  speed_kph: number;
+  throttle_pct: number;
+  brake_bar: number;
+}
+
+export interface TracePoint {
+  distance_m: number;
+  speed_kph: number;
+  throttle_pct: number;
+  brake_bar: number;
+}
+
+export interface FrictionScatterPoint {
+  lat_g: number;
+  long_g: number;
+  total_g: number;
+}
+
 export interface FrictionCircle {
   total_g_mean: number;
   total_g_p95: number;
@@ -89,6 +110,7 @@ export interface FrictionCircle {
   peak_long_g_accel: number;
   time_above_08g_pct: number;
   time_above_10g_pct: number;
+  scatter_points?: FrictionScatterPoint[];
 }
 
 export interface XDrive {
@@ -106,6 +128,8 @@ export interface SessionSummary {
   thermals: ThermalChannel[];
   friction_circle: FrictionCircle;
   xdrive?: XDrive;
+  gps_trace?: GpsPoint[];
+  best_lap_trace?: TracePoint[];
 }
 
 // ─── App-level types ────────────────────────────────────────────────────────

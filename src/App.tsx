@@ -11,7 +11,17 @@ import { LapTimesChart } from '@/components/charts/LapTimesChart';
 import { CornerSpeedChart } from '@/components/charts/CornerSpeedChart';
 import { ThermalChart } from '@/components/charts/ThermalChart';
 import { FrictionCircleChart } from '@/components/charts/FrictionCircleChart';
-import { useSessionStore } from '@/lib/sessionStore';
+import { CornerDetailTable } from '@/components/charts/CornerDetailTable';
+import { TrackMapChart } from '@/components/charts/TrackMapChart';
+import { TraceChart } from '@/components/charts/TraceChart';
+import { LapDeltaChart } from '@/components/charts/LapDeltaChart';
+import { FrictionScatterChart } from '@/components/charts/FrictionScatterChart';
+import { DebriefNotes } from '@/components/DebriefNotes';
+import { CoachingInsights } from '@/components/CoachingInsights';
+import { DrivePickerButton } from '@/components/DrivePickerButton';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { usePersistedSessions } from '@/lib/usePersistedSessions';
+import { sessionLabel } from '@/lib/utils';
 import React from 'react';
 import trackPhoto from '@/assets/m3-track.jpg';
 import bmwMLogo from '@/assets/bmw-m-logo.jpg';
@@ -25,7 +35,7 @@ interface AuthUser {
 }
 
 export default function App() {
-  const store = useSessionStore();
+  const store = usePersistedSessions();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [user, setUser] = useState<AuthUser | null>(() => {
@@ -54,6 +64,15 @@ export default function App() {
   const sidebarContent = (
     <>
       <DropZone onSessionLoaded={store.addSession} />
+      <DrivePickerButton onSessionLoaded={store.addSession} />
+      {store.sessions.length > 0 && (
+        <button
+          onClick={store.clearSavedSessions}
+          className="text-xs text-slate-500 hover:text-red-400 transition-colors self-start"
+        >
+          Clear saved sessions
+        </button>
+      )}
       <SessionList
         sessions={store.sessions}
         activeIds={store.activeSessionIds}
@@ -157,43 +176,115 @@ export default function App() {
             <Tabs defaultValue="overview" className="space-y-6">
               <TabsList className="bg-slate-900/90 border border-slate-800 flex-wrap h-auto gap-1">
                 <TabsTrigger value="overview" className="text-xs">Overview</TabsTrigger>
+                <TabsTrigger value="trackmap" className="text-xs">Track Map</TabsTrigger>
                 <TabsTrigger value="laptimes" className="text-xs">Lap Times</TabsTrigger>
                 <TabsTrigger value="corners" className="text-xs">Corner Speeds</TabsTrigger>
+                <TabsTrigger value="corner-detail" className="text-xs">Corner Detail</TabsTrigger>
+                <TabsTrigger value="traces" className="text-xs">Traces</TabsTrigger>
+                <TabsTrigger value="lap-delta" className="text-xs">Lap Delta</TabsTrigger>
                 <TabsTrigger value="thermals" className="text-xs">Thermals</TabsTrigger>
                 <TabsTrigger value="development" className="text-xs">Driver Development</TabsTrigger>
               </TabsList>
 
               <TabsContent value="overview" className="space-y-6">
-                <Section title="Session Summary">
-                  <SessionStats sessions={store.activeSessions} />
-                </Section>
-                <Section title="Lap Time Progression">
-                  <LapTimesChart sessions={store.activeSessions} />
-                </Section>
+                <ErrorBoundary>
+                  <Section title="Session Summary">
+                    <SessionStats sessions={store.activeSessions} />
+                  </Section>
+                </ErrorBoundary>
+                <ErrorBoundary>
+                  <Section title="Lap Time Progression">
+                    <LapTimesChart sessions={store.activeSessions} />
+                  </Section>
+                </ErrorBoundary>
+                <ErrorBoundary>
+                  <Section title="Coaching Insights">
+                    <CoachingInsights sessions={store.activeSessions} />
+                  </Section>
+                </ErrorBoundary>
+                <ErrorBoundary>
+                  <Section title="Debrief Notes">
+                    {store.activeSessions.map(session => (
+                      <div key={session.id} className="space-y-1">
+                        {store.activeSessions.length > 1 && (
+                          <p className="text-xs text-slate-500 font-medium">{sessionLabel(session)}</p>
+                        )}
+                        <DebriefNotes sessionId={session.id} />
+                      </div>
+                    ))}
+                  </Section>
+                </ErrorBoundary>
+              </TabsContent>
+
+              <TabsContent value="trackmap">
+                <ErrorBoundary>
+                  <Section title="GPS Track Map">
+                    <TrackMapChart sessions={store.activeSessions} />
+                  </Section>
+                </ErrorBoundary>
               </TabsContent>
 
               <TabsContent value="laptimes">
-                <Section title="Lap Time Progression">
-                  <LapTimesChart sessions={store.activeSessions} />
-                </Section>
+                <ErrorBoundary>
+                  <Section title="Lap Time Progression">
+                    <LapTimesChart sessions={store.activeSessions} />
+                  </Section>
+                </ErrorBoundary>
               </TabsContent>
 
               <TabsContent value="corners">
-                <Section title="Corner Speed Comparison">
-                  <CornerSpeedChart sessions={store.activeSessions} />
-                </Section>
+                <ErrorBoundary>
+                  <Section title="Corner Speed Comparison">
+                    <CornerSpeedChart sessions={store.activeSessions} />
+                  </Section>
+                </ErrorBoundary>
+              </TabsContent>
+
+              <TabsContent value="corner-detail">
+                <ErrorBoundary>
+                  <Section title="Corner Detail">
+                    <CornerDetailTable sessions={store.activeSessions} />
+                  </Section>
+                </ErrorBoundary>
+              </TabsContent>
+
+              <TabsContent value="traces">
+                <ErrorBoundary>
+                  <Section title="Throttle &amp; Brake Trace">
+                    <TraceChart sessions={store.activeSessions} />
+                  </Section>
+                </ErrorBoundary>
+              </TabsContent>
+
+              <TabsContent value="lap-delta">
+                <ErrorBoundary>
+                  <Section title="Lap Delta by Corner">
+                    <LapDeltaChart sessions={store.activeSessions} />
+                  </Section>
+                </ErrorBoundary>
               </TabsContent>
 
               <TabsContent value="thermals">
-                <Section title="Thermal Trends">
-                  <ThermalChart sessions={store.activeSessions} />
-                </Section>
+                <ErrorBoundary>
+                  <Section title="Thermal Trends">
+                    <ThermalChart sessions={store.activeSessions} />
+                  </Section>
+                </ErrorBoundary>
               </TabsContent>
 
               <TabsContent value="development">
-                <Section title="Driver Development Radar">
-                  <FrictionCircleChart sessions={store.activeSessions} />
-                </Section>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <ErrorBoundary>
+                    <Section title="Friction Circle">
+                      <FrictionScatterChart sessions={store.activeSessions} />
+                    </Section>
+                  </ErrorBoundary>
+                  <ErrorBoundary>
+                    <Section title="Driver Development Radar">
+                      <FrictionCircleChart sessions={store.activeSessions} />
+                    </Section>
+                  </ErrorBoundary>
+                </div>
               </TabsContent>
             </Tabs>
           )}

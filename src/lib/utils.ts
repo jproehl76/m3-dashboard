@@ -8,6 +8,10 @@ export function cn(...inputs: ClassValue[]) {
 
 // ─── Unit conversion ────────────────────────────────────────────────────────
 
+export const KPH_TO_MPH = 0.621371;
+export const M_TO_FEET = 3.28084;
+export const BAR_TO_PSI = 14.5038;
+
 export function kphToMph(kph: number): number {
   return kph * 0.621371;
 }

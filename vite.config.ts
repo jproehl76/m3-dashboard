@@ -17,6 +17,7 @@ export default defineConfig({
         manualChunks: {
           vendor: ['react', 'react-dom'],
           charts: ['recharts'],
+          d3: ['d3'],
         },
       },
     },
