@@ -1,7 +1,6 @@
 import { useCallback, useState } from 'react';
-import { Upload, FileJson } from 'lucide-react';
+import { Upload } from 'lucide-react';
 import { toast } from 'sonner';
-import { cn } from '@/lib/utils';
 import type { SessionSummary } from '@/types/session';
 import { parseRacechronoCsv } from '@/lib/parseRacechronoCsv';
 
@@ -62,12 +61,11 @@ export function DropZone({ onSessionLoaded }: DropZoneProps) {
 
   return (
     <label
-      className={cn(
-        'flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed p-8 cursor-pointer transition-all duration-200',
-        isDragging
-          ? 'border-blue-500 bg-blue-950/30'
-          : 'border-slate-600 bg-slate-900/50 hover:border-slate-400 hover:bg-slate-800/50'
-      )}
+      className="relative rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-3 p-6 text-center transition-all duration-200 cursor-pointer"
+      style={{
+        borderColor: isDragging ? '#3B82F6' : '#2E2E3C',
+        background: isDragging ? 'rgba(59,130,246,0.08)' : 'rgba(26,26,34,0.6)',
+      }}
       onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
       onDragLeave={() => setIsDragging(false)}
       onDrop={onDrop}
@@ -79,14 +77,15 @@ export function DropZone({ onSessionLoaded }: DropZoneProps) {
         className="sr-only"
         onChange={onInputChange}
       />
-      <div className="flex items-center gap-2 text-slate-400">
-        <Upload size={20} />
-        <FileJson size={20} />
+      <Upload size={20} style={{ color: isDragging ? '#3B82F6' : '#606070' }} />
+      <div>
+        <div style={{ fontFamily: 'Rajdhani', fontSize: '14px', fontWeight: 600, letterSpacing: '0.05em', color: '#E8E8F0' }}>
+          {isDragging ? 'Drop session here' : 'Load Session'}
+        </div>
+        <div style={{ fontFamily: 'Rajdhani', fontSize: '11px', color: '#606070', marginTop: 2 }}>
+          RaceChrono CSV · JSON · tap to browse
+        </div>
       </div>
-      <p className="text-sm text-slate-400 text-center">
-        Drop session JSON or CSV files here or <span className="text-blue-400 underline">click to browse</span>
-      </p>
-      <p className="text-xs text-slate-600">Multiple files supported</p>
     </label>
   );
 }

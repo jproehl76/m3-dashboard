@@ -5,11 +5,12 @@ import {
 } from 'recharts';
 import type { LoadedSession, FrictionScatterPoint } from '@/types/session';
 import { sessionLabel } from '@/lib/utils';
+import { AXIS_STYLE, GRID_STYLE, TOOLTIP_STYLE } from '@/lib/chartTheme';
 
 function pointColor(totalG: number): string {
-  if (totalG > 0.8) return '#10b981';
-  if (totalG >= 0.5) return '#f59e0b';
-  return '#475569';
+  if (totalG > 0.8) return '#22C55E';
+  if (totalG >= 0.5) return '#F59E0B';
+  return '#38384A';
 }
 
 interface ScatterDot {
@@ -42,36 +43,43 @@ export function FrictionScatterChart({ sessions }: Props) {
 
   if (!hasData) {
     return (
-      <p className="text-xs text-slate-600">
+      <p style={{ fontFamily: 'Rajdhani', fontSize: '12px', color: '#606070' }}>
         No scatter point data available. Ensure the preprocessor outputs friction_circle.scatter_points.
       </p>
     );
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2" style={{ touchAction: 'pan-x pan-y', userSelect: 'none' }}>
       <ResponsiveContainer width="100%" height={320}>
         <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+          <CartesianGrid
+            stroke={GRID_STYLE.stroke}
+            vertical={GRID_STYLE.vertical}
+          />
           <XAxis
             type="number"
             dataKey="x"
             domain={[-2, 2]}
-            tick={{ fill: '#64748b', fontSize: 10 }}
-            label={{ value: '← Left   Lateral G   Right →', position: 'insideBottom', offset: -10, fill: '#64748b', fontSize: 10 }}
+            tick={AXIS_STYLE.tick}
+            axisLine={AXIS_STYLE.axisLine}
+            tickLine={AXIS_STYLE.tickLine}
+            label={{ value: '← Left   Lateral G   Right →', position: 'insideBottom', offset: -10, fill: '#606070', fontSize: 10, fontFamily: 'JetBrains Mono' }}
           />
           <YAxis
             type="number"
             dataKey="y"
             domain={[-2, 2]}
-            tick={{ fill: '#64748b', fontSize: 10 }}
-            label={{ value: 'Longitudinal G', angle: -90, position: 'insideLeft', fill: '#64748b', fontSize: 10 }}
+            tick={AXIS_STYLE.tick}
+            axisLine={AXIS_STYLE.axisLine}
+            tickLine={AXIS_STYLE.tickLine}
+            label={{ value: 'Longitudinal G', angle: -90, position: 'insideLeft', fill: '#606070', fontSize: 10, fontFamily: 'JetBrains Mono' }}
           />
-          <ReferenceLine y={0} stroke="#334155" />
-          <ReferenceLine x={0} stroke="#334155" />
+          <ReferenceLine y={0} stroke="#2E2E3C" />
+          <ReferenceLine x={0} stroke="#2E2E3C" />
           <Tooltip
             cursor={{ strokeDasharray: '3 3' }}
-            contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #1e293b', fontSize: 11 }}
+            contentStyle={TOOLTIP_STYLE}
             formatter={(value: number | undefined, name: string | undefined) => {
               if (value === undefined) return String(value);
               if (name === 'x') return [`${value.toFixed(2)}G`, 'Lateral'] as [string, string];
@@ -97,10 +105,10 @@ export function FrictionScatterChart({ sessions }: Props) {
           ))}
         </ScatterChart>
       </ResponsiveContainer>
-      <div className="flex gap-4 text-xs text-slate-500">
-        <span><span className="inline-block w-2 h-2 rounded-full bg-emerald-500 mr-1" />&gt;0.8G</span>
-        <span><span className="inline-block w-2 h-2 rounded-full bg-amber-500 mr-1" />0.5–0.8G</span>
-        <span><span className="inline-block w-2 h-2 rounded-full bg-slate-600 mr-1" />&lt;0.5G</span>
+      <div className="flex gap-4" style={{ fontFamily: 'Rajdhani', fontSize: '11px', color: '#606070' }}>
+        <span><span className="inline-block w-2 h-2 rounded-full mr-1" style={{ background: '#22C55E' }} />&gt;0.8G</span>
+        <span><span className="inline-block w-2 h-2 rounded-full mr-1" style={{ background: '#F59E0B' }} />0.5–0.8G</span>
+        <span><span className="inline-block w-2 h-2 rounded-full mr-1" style={{ background: '#38384A' }} />&lt;0.5G</span>
       </div>
     </div>
   );

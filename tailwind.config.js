@@ -7,6 +7,11 @@ module.exports = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        ui:      ['Rajdhani', 'system-ui', 'sans-serif'],
+        mono:    ['JetBrains Mono', 'SF Mono', 'monospace'],
+        display: ['Barlow Condensed', 'Rajdhani', 'sans-serif'],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -37,15 +42,44 @@ module.exports = {
           DEFAULT: "hsl(var(--popover))",
           foreground: "hsl(var(--popover-foreground))",
         },
-        card: {
-          DEFAULT: "hsl(var(--card))",
-          foreground: "hsl(var(--card-foreground))",
+        surface: {
+          void:      '#08080C',
+          base:      '#0F0F14',
+          card:      '#1A1A22',
+          elevated:  '#242430',
+          overlay:   '#2E2E3C',
+          highlight: '#38384A',
+        },
+        channel: {
+          speed:    '#3B82F6',
+          brake:    '#EF4444',
+          throttle: '#22C55E',
+          rpm:      '#F97316',
+          gear:     '#A855F7',
+          steering: '#06B6D4',
+          latg:     '#EC4899',
+          longg:    '#EAB308',
+        },
+        status: {
+          faster:  '#22C55E',
+          slower:  '#EF4444',
+          warning: '#F59E0B',
+          info:    '#3B82F6',
+          best:    '#A855F7',
         },
       },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+      },
+      screens: {
+        xs: '390px',
+        sm: '430px',
+        md: '768px',
+        lg: '1024px',
+        xl: '1280px',
+        '2xl': '1536px',
       },
       keyframes: {
         "accordion-down": {

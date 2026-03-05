@@ -3,6 +3,7 @@ import {
 } from 'recharts';
 import type { LoadedSession } from '@/types/session';
 import { formatLapTime, sessionLabel } from '@/lib/utils';
+import { CHART_MARGINS, AXIS_STYLE, GRID_STYLE, TOOLTIP_STYLE } from '@/lib/chartTheme';
 
 interface Props {
   sessions: LoadedSession[];
@@ -33,11 +34,11 @@ function buildChartData(sessions: LoadedSession[]): ChartPoint[] {
 function CustomTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 shadow-xl text-xs">
-      <p className="mb-1 font-semibold text-slate-300">Lap {label}</p>
+    <div style={TOOLTIP_STYLE}>
+      <p style={{ marginBottom: 4, fontWeight: 600, color: '#9898A8' }}>Lap {label}</p>
       {payload.map((entry: { color: string; name: string; value: number }) => (
         <p key={entry.name} style={{ color: entry.color }}>
-          {entry.name}: <span className="font-mono">{formatLapTime(entry.value)}</span>
+          {entry.name}: <span>{formatLapTime(entry.value)}</span>
         </p>
       ))}
     </div>
@@ -59,31 +60,37 @@ export function LapTimesChart({ sessions }: Props) {
   }));
 
   return (
-    <div className="space-y-2">
-      <p className="text-xs text-slate-500">
+    <div className="space-y-2" style={{ touchAction: 'pan-x pan-y', userSelect: 'none' }}>
+      <p style={{ fontFamily: 'Rajdhani', fontSize: '11px', color: '#606070' }}>
         Outlier laps excluded. Dashed lines = best lap per session.
       </p>
       <ResponsiveContainer width="100%" height={320}>
-        <LineChart data={data} margin={{ top: 8, right: 16, left: 8, bottom: 8 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+        <LineChart data={data} margin={CHART_MARGINS}>
+          <CartesianGrid
+            stroke={GRID_STYLE.stroke}
+            vertical={GRID_STYLE.vertical}
+          />
           <XAxis
             dataKey="lap"
-            stroke="#475569"
-            tick={{ fill: '#94a3b8', fontSize: 11 }}
-            label={{ value: 'Lap', position: 'insideBottom', offset: -2, fill: '#64748b', fontSize: 11 }}
+            tick={AXIS_STYLE.tick}
+            axisLine={AXIS_STYLE.axisLine}
+            tickLine={AXIS_STYLE.tickLine}
+            label={{ value: 'Lap', position: 'insideBottom', offset: -4, fill: '#606070', fontSize: 10, fontFamily: 'JetBrains Mono' }}
           />
           <YAxis
-            stroke="#475569"
-            tick={{ fill: '#94a3b8', fontSize: 11 }}
+            tick={AXIS_STYLE.tick}
+            axisLine={AXIS_STYLE.axisLine}
+            tickLine={AXIS_STYLE.tickLine}
             tickFormatter={(v: number) => formatLapTime(v)}
             width={72}
             domain={['auto', 'auto']}
           />
           <Tooltip content={<CustomTooltip />} />
           <Legend
+            wrapperStyle={{ fontFamily: 'Rajdhani', fontSize: '12px' }}
             formatter={(value) => {
               const s = sessions.find(s => s.id === value);
-              return <span className="text-xs text-slate-300">{s ? sessionLabel(s) : value}</span>;
+              return <span style={{ color: '#9898A8', fontFamily: 'Rajdhani' }}>{s ? sessionLabel(s) : value}</span>;
             }}
           />
           {bestLaps.map(({ id, color, best }) => (
@@ -116,7 +123,7 @@ export function LapTimesChart({ sessions }: Props) {
 
 function EmptyState({ message }: { message: string }) {
   return (
-    <div className="flex h-48 items-center justify-center text-sm text-slate-600">
+    <div className="flex h-48 items-center justify-center" style={{ fontFamily: 'Rajdhani', fontSize: '13px', color: '#606070' }}>
       {message}
     </div>
   );

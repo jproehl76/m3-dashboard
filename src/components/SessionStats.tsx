@@ -8,44 +8,69 @@ interface Props {
 export function SessionStats({ sessions }: Props) {
   if (sessions.length === 0) {
     return (
-      <div className="flex h-32 items-center justify-center text-sm text-slate-600">
+      <div className="flex h-32 items-center justify-center" style={{ fontFamily: 'Rajdhani', fontSize: '13px', color: '#606070' }}>
         Load sessions to see summary statistics
       </div>
     );
   }
 
   return (
-    <div className="grid gap-4" style={{ gridTemplateColumns: `repeat(${Math.min(sessions.length, 3)}, 1fr)` }}>
+    <div className="space-y-4">
       {sessions.map(session => {
         const { consistency, header, friction_circle } = session.data;
         const rating = consistencyRating(consistency.spread_s);
+        const bestLap = formatLapTime(consistency.best_lap_s);
+        const avgLap = formatLapTime(consistency.mean_lap_s);
 
         return (
-          <div
-            key={session.id}
-            className="rounded-xl border border-slate-700/50 bg-slate-800/40 p-4 space-y-3"
-            style={{ borderLeftColor: session.color, borderLeftWidth: 3 }}
-          >
-            {/* Session label */}
-            <div>
-              <p className="text-xs font-semibold text-slate-200 truncate">{sessionLabel(session)}</p>
-              <p className="text-xs text-slate-500">{header.analyzed_laps} laps · {header.duration_minutes.toFixed(1)} min</p>
-            </div>
+          <div key={session.id}>
+            {sessions.length > 1 && (
+              <p className="mb-2" style={{ fontFamily: 'Rajdhani', fontSize: '12px', fontWeight: 500, color: '#9898A8' }}>
+                {sessionLabel(session)}
+              </p>
+            )}
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              {/* Best lap — special purple card */}
+              <div className="card p-3 col-span-2 sm:col-span-1" style={{ borderColor: 'rgba(168,85,247,0.4)', background: 'rgba(168,85,247,0.06)' }}>
+                <div className="flex items-center gap-1.5 mb-1">
+                  <div className="w-1.5 h-1.5 rounded-full" style={{ background: '#A855F7' }} />
+                  <span style={{ fontFamily: 'Rajdhani', fontSize: '10px', letterSpacing: '0.15em', textTransform: 'uppercase', color: '#A855F7' }}>Best Lap</span>
+                </div>
+                <div style={{ fontFamily: 'JetBrains Mono', fontSize: '28px', fontWeight: 600, color: '#A855F7', lineHeight: 1 }}>{bestLap}</div>
+                <div style={{ fontFamily: 'Rajdhani', fontSize: '11px', color: '#606070', marginTop: 4 }}>
+                  {header.analyzed_laps} laps
+                </div>
+              </div>
 
-            {/* Key stats */}
-            <div className="grid grid-cols-2 gap-2">
-              <Stat label="Best Lap" value={formatLapTime(consistency.best_lap_s)} />
-              <Stat label="Avg Lap" value={formatLapTime(consistency.mean_lap_s)} />
-              <Stat label="Spread" value={`${consistency.spread_s.toFixed(1)}s`} valueColor={rating.color} />
-              <Stat label="Consistency" value={rating.label} valueColor={rating.color} />
-              <Stat label="Peak Lat G" value={`${friction_circle.peak_lat_g.toFixed(2)}G`} />
-              <Stat label=">0.8G" value={`${friction_circle.time_above_08g_pct.toFixed(1)}%`} />
+              {/* Spread */}
+              <KpiCard
+                label="Spread"
+                value={`${consistency.spread_s.toFixed(1)}s`}
+                valueColor={rating.color}
+                subtext={rating.label}
+                dotColor={rating.color}
+              />
+
+              {/* Avg Lap */}
+              <KpiCard
+                label="Avg Lap"
+                value={avgLap}
+                subtext={`${header.duration_minutes.toFixed(1)} min`}
+              />
+
+              {/* Peak Lat G */}
+              <KpiCard
+                label="Peak Lat G"
+                value={`${friction_circle.peak_lat_g.toFixed(2)}G`}
+                subtext={`>${friction_circle.time_above_08g_pct.toFixed(1)}% >0.8G`}
+                dotColor="#EC4899"
+              />
             </div>
 
             {/* Missing channels warning */}
             {header.channels_missing.length > 0 && (
-              <p className="text-xs text-amber-500">
-                ⚠ Missing: {header.channels_missing.join(', ')}
+              <p className="mt-2" style={{ fontFamily: 'Rajdhani', fontSize: '11px', color: '#F59E0B' }}>
+                Missing channels: {header.channels_missing.join(', ')}
               </p>
             )}
           </div>
@@ -55,13 +80,29 @@ export function SessionStats({ sessions }: Props) {
   );
 }
 
-function Stat({ label, value, valueColor }: { label: string; value: string; valueColor?: string }) {
+interface KpiCardProps {
+  label: string;
+  value: string;
+  valueColor?: string;
+  subtext?: string;
+  dotColor?: string;
+}
+
+function KpiCard({ label, value, valueColor, subtext, dotColor }: KpiCardProps) {
   return (
-    <div>
-      <p className="text-xs text-slate-500">{label}</p>
-      <p className="text-sm font-semibold font-mono" style={{ color: valueColor ?? '#e2e8f0' }}>
+    <div className="card p-3 flex flex-col gap-1">
+      <div className="flex items-center gap-1.5">
+        {dotColor && <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: dotColor }} />}
+        <span style={{ fontFamily: 'Rajdhani', fontSize: '10px', letterSpacing: '0.15em', textTransform: 'uppercase', color: '#606070' }}>
+          {label}
+        </span>
+      </div>
+      <div style={{ fontFamily: 'JetBrains Mono', fontSize: '22px', fontWeight: 500, color: valueColor ?? '#F4F4FC', lineHeight: 1 }}>
         {value}
-      </p>
+      </div>
+      {subtext && (
+        <div style={{ fontFamily: 'Rajdhani', fontSize: '11px', color: '#606070' }}>{subtext}</div>
+      )}
     </div>
   );
 }

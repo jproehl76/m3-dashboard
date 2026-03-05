@@ -12,15 +12,15 @@ interface CornerRow {
 }
 
 function gapColor(gapMph: number): string {
-  if (gapMph > 3) return 'text-red-400';
-  if (gapMph >= 2) return 'text-amber-400';
-  return 'text-slate-400';
+  if (gapMph > 3) return '#EF4444';
+  if (gapMph >= 2) return '#F59E0B';
+  return '#9898A8';
 }
 
 function brakeColor(ft: number): string {
-  if (ft > 40) return 'text-red-400';
-  if (ft >= 20) return 'text-amber-400';
-  return 'text-slate-400';
+  if (ft > 40) return '#EF4444';
+  if (ft >= 20) return '#F59E0B';
+  return '#9898A8';
 }
 
 function buildRows(session: LoadedSession): CornerRow[] {
@@ -56,8 +56,19 @@ export function CornerDetailTable({ sessions }: Props) {
   );
 
   if (sessions.length === 0) {
-    return <p className="text-xs text-slate-600">Load a session to see corner detail.</p>;
+    return <p style={{ fontFamily: 'Rajdhani', fontSize: '12px', color: '#606070' }}>Load a session to see corner detail.</p>;
   }
+
+  const thStyle: React.CSSProperties = {
+    fontFamily: 'Rajdhani',
+    fontSize: '10px',
+    letterSpacing: '0.1em',
+    textTransform: 'uppercase',
+    color: '#606070',
+    fontWeight: 500,
+    paddingBottom: 8,
+    paddingRight: 12,
+  };
 
   return (
     <div className="space-y-4">
@@ -67,11 +78,13 @@ export function CornerDetailTable({ sessions }: Props) {
             <button
               key={s.id}
               onClick={() => setActiveSessionId(s.id)}
-              className={`text-xs px-2 py-1 rounded border transition-colors ${
-                s.id === activeSessionId
-                  ? 'border-blue-500 text-blue-400 bg-blue-950/30'
-                  : 'border-slate-700 text-slate-500 hover:border-slate-500'
-              }`}
+              className="text-xs px-2 py-1 rounded border transition-colors"
+              style={{
+                fontFamily: 'Rajdhani',
+                borderColor: s.id === activeSessionId ? '#3B82F6' : '#2E2E3C',
+                color: s.id === activeSessionId ? '#3B82F6' : '#606070',
+                background: s.id === activeSessionId ? 'rgba(59,130,246,0.1)' : 'transparent',
+              }}
             >
               {sessionLabel(s)}
             </button>
@@ -80,31 +93,45 @@ export function CornerDetailTable({ sessions }: Props) {
       )}
 
       <div className="overflow-x-auto">
-        <table className="w-full text-xs">
+        <table className="w-full">
           <thead>
-            <tr className="border-b border-slate-700 text-slate-500 text-left">
-              <th className="pb-2 pr-4 font-medium">Corner</th>
-              <th className="pb-2 pr-4 font-medium text-right">Best (mph)</th>
-              <th className="pb-2 pr-4 font-medium text-right">Avg (mph)</th>
-              <th className="pb-2 pr-4 font-medium text-right">Gap (mph)</th>
-              <th className="pb-2 pr-4 font-medium text-right">Brake Std Dev</th>
-              <th className="pb-2 font-medium text-right">Coast Time</th>
+            <tr style={{ borderBottom: '1px solid #2E2E3C' }}>
+              <th className="text-left" style={thStyle}>Corner</th>
+              <th className="text-right" style={thStyle}>Best (mph)</th>
+              <th className="text-right" style={thStyle}>Avg (mph)</th>
+              <th className="text-right" style={thStyle}>Gap (mph)</th>
+              <th className="text-right" style={thStyle}>Brake Std</th>
+              <th className="text-right" style={{ ...thStyle, paddingRight: 0 }}>Coast</th>
             </tr>
           </thead>
           <tbody>
             {rows.map(row => (
-              <tr key={row.cornerName} className="border-b border-slate-800/50">
-                <td className="py-2 pr-4 text-slate-300 font-medium">{row.cornerName}</td>
-                <td className="py-2 pr-4 text-right text-slate-300">{row.bestSpeedMph.toFixed(1)}</td>
-                <td className="py-2 pr-4 text-right text-slate-400">{row.avgSpeedMph.toFixed(1)}</td>
-                <td className={`py-2 pr-4 text-right font-semibold ${gapColor(row.gapMph)}`}>
+              <tr
+                key={row.cornerName}
+                style={{ borderBottom: '1px solid #1E1E28', height: 44 }}
+                onMouseEnter={e => (e.currentTarget.style.background = '#242430')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+              >
+                <td style={{ fontFamily: 'Rajdhani', fontSize: '14px', fontWeight: 600, color: '#E8E8F0', paddingRight: 12 }}>
+                  {row.cornerName}
+                </td>
+                <td className="text-right" style={{ fontFamily: 'JetBrains Mono', fontSize: '13px', color: '#E8E8F0', paddingRight: 12 }}>
+                  {row.bestSpeedMph.toFixed(1)}
+                </td>
+                <td className="text-right" style={{ fontFamily: 'JetBrains Mono', fontSize: '13px', color: '#9898A8', paddingRight: 12 }}>
+                  {row.avgSpeedMph.toFixed(1)}
+                </td>
+                <td className="text-right" style={{ fontFamily: 'JetBrains Mono', fontSize: '13px', fontWeight: 600, color: gapColor(row.gapMph), paddingRight: 12 }}>
                   {row.gapMph.toFixed(1)}
+                  <span style={{ fontFamily: 'Rajdhani', fontSize: '10px', color: '#606070', marginLeft: 2 }}>mph</span>
                 </td>
-                <td className={`py-2 pr-4 text-right ${brakeColor(row.brakeStdFt)}`}>
-                  {row.brakeStdFt.toFixed(0)} ft
+                <td className="text-right" style={{ fontFamily: 'JetBrains Mono', fontSize: '13px', color: brakeColor(row.brakeStdFt), paddingRight: 12 }}>
+                  {row.brakeStdFt.toFixed(0)}
+                  <span style={{ fontFamily: 'Rajdhani', fontSize: '10px', color: '#606070', marginLeft: 2 }}>ft</span>
                 </td>
-                <td className="py-2 text-right text-slate-400">
-                  {row.coastTimeS.toFixed(2)}s
+                <td className="text-right" style={{ fontFamily: 'JetBrains Mono', fontSize: '13px', color: '#9898A8' }}>
+                  {row.coastTimeS.toFixed(2)}
+                  <span style={{ fontFamily: 'Rajdhani', fontSize: '10px', color: '#606070', marginLeft: 2 }}>s</span>
                 </td>
               </tr>
             ))}

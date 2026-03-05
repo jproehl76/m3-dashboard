@@ -16,10 +16,10 @@ interface Props {
 }
 
 function recoveryColor(score: number | null): string {
-  if (score === null) return '#94a3b8'; // slate-400
-  if (score >= 67) return '#4ade80';   // green-400
-  if (score >= 34) return '#facc15';   // yellow-400
-  return '#f87171';                    // red-400
+  if (score === null) return '#9898A8';
+  if (score >= 67) return '#22C55E';
+  if (score >= 34) return '#F59E0B';
+  return '#EF4444';
 }
 
 function fmt(value: number | null, suffix: string): string {
@@ -110,11 +110,22 @@ export function WhoopPanel({ sessionDates, connectedOverride }: Props) {
       <div className="flex items-center gap-3">
         <button
           onClick={initiateWhoopAuth}
-          className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-green-600 hover:bg-green-500 text-white transition-colors"
+          className="px-3 py-1.5 rounded-lg transition-colors"
+          style={{
+            fontFamily: 'Rajdhani',
+            fontSize: '12px',
+            fontWeight: 600,
+            letterSpacing: '0.05em',
+            background: 'rgba(34,197,94,0.15)',
+            border: '1px solid rgba(34,197,94,0.4)',
+            color: '#22C55E',
+          }}
         >
           Connect WHOOP
         </button>
-        <p className="text-xs text-slate-500">See your recovery &amp; HRV on race day</p>
+        <p style={{ fontFamily: 'Rajdhani', fontSize: '12px', color: '#606070' }}>
+          See your recovery &amp; HRV on race day
+        </p>
       </div>
     );
   }
@@ -122,7 +133,7 @@ export function WhoopPanel({ sessionDates, connectedOverride }: Props) {
   // ── Loading ────────────────────────────────────────────────────────────────
   if (loading) {
     return (
-      <div className="flex items-center gap-2 text-xs text-slate-400">
+      <div className="flex items-center gap-2" style={{ fontFamily: 'Rajdhani', fontSize: '12px', color: '#9898A8' }}>
         <span className="animate-spin">⟳</span>
         Loading WHOOP data…
       </div>
@@ -133,8 +144,14 @@ export function WhoopPanel({ sessionDates, connectedOverride }: Props) {
   if (error) {
     return (
       <div className="space-y-2">
-        <p className="text-xs text-red-400">{error}</p>
-        <button onClick={handleDisconnect} className="text-xs text-slate-500 hover:text-red-400 transition-colors underline">
+        <p style={{ fontFamily: 'Rajdhani', fontSize: '12px', color: '#EF4444' }}>{error}</p>
+        <button
+          onClick={handleDisconnect}
+          className="underline transition-colors"
+          style={{ fontFamily: 'Rajdhani', fontSize: '12px', color: '#606070' }}
+          onMouseEnter={e => (e.currentTarget.style.color = '#EF4444')}
+          onMouseLeave={e => (e.currentTarget.style.color = '#606070')}
+        >
           Disconnect
         </button>
       </div>
@@ -148,51 +165,22 @@ export function WhoopPanel({ sessionDates, connectedOverride }: Props) {
         {data.map((day) => (
           <div
             key={day.date}
-            className="rounded-lg border border-slate-700/50 bg-slate-800/40 p-3 space-y-2"
+            className="card p-3 space-y-2"
           >
-            <p className="text-xs font-semibold text-slate-300">
+            <p style={{ fontFamily: 'Rajdhani', fontSize: '12px', fontWeight: 600, color: '#9898A8' }}>
               WHOOP — {formatDate(day.date)}
             </p>
 
             {hasAnyData(day) ? (
-              <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs font-mono">
-                <span>
-                  Recovery:{' '}
-                  <span style={{ color: recoveryColor(day.recovery_score) }} className="font-semibold">
-                    {fmt(day.recovery_score, '%')}
-                  </span>
-                </span>
-                <span className="text-slate-400">|</span>
-                <span>
-                  HRV:{' '}
-                  <span className="text-slate-200 font-semibold">
-                    {fmt(day.hrv_rmssd_ms, 'ms')}
-                  </span>
-                </span>
-                <span className="text-slate-400">|</span>
-                <span>
-                  RHR:{' '}
-                  <span className="text-slate-200 font-semibold">
-                    {fmt(day.resting_hr, 'bpm')}
-                  </span>
-                </span>
-                <span className="text-slate-400">|</span>
-                <span>
-                  Sleep:{' '}
-                  <span className="text-slate-200 font-semibold">
-                    {fmt(day.sleep_performance_pct, '%')}
-                  </span>
-                </span>
-                <span className="text-slate-400">|</span>
-                <span>
-                  Strain:{' '}
-                  <span className="text-slate-200 font-semibold">
-                    {fmtDecimal(day.day_strain)}
-                  </span>
-                </span>
+              <div className="flex flex-wrap gap-x-4 gap-y-1">
+                <WhoopStat label="Recovery" value={fmt(day.recovery_score, '%')} valueColor={recoveryColor(day.recovery_score)} />
+                <WhoopStat label="HRV" value={fmt(day.hrv_rmssd_ms, 'ms')} />
+                <WhoopStat label="RHR" value={fmt(day.resting_hr, 'bpm')} />
+                <WhoopStat label="Sleep" value={fmt(day.sleep_performance_pct, '%')} />
+                <WhoopStat label="Strain" value={fmtDecimal(day.day_strain)} />
               </div>
             ) : (
-              <p className="text-xs text-slate-500">No WHOOP data found for this date.</p>
+              <p style={{ fontFamily: 'Rajdhani', fontSize: '12px', color: '#606070' }}>No WHOOP data found for this date.</p>
             )}
           </div>
         ))}
@@ -200,10 +188,30 @@ export function WhoopPanel({ sessionDates, connectedOverride }: Props) {
 
       <button
         onClick={handleDisconnect}
-        className="text-xs text-slate-500 hover:text-red-400 transition-colors underline"
+        className="underline transition-colors"
+        style={{ fontFamily: 'Rajdhani', fontSize: '12px', color: '#606070' }}
+        onMouseEnter={e => (e.currentTarget.style.color = '#EF4444')}
+        onMouseLeave={e => (e.currentTarget.style.color = '#606070')}
       >
         Disconnect WHOOP
       </button>
     </div>
+  );
+}
+
+interface WhoopStatProps {
+  label: string;
+  value: string;
+  valueColor?: string;
+}
+
+function WhoopStat({ label, value, valueColor }: WhoopStatProps) {
+  return (
+    <span>
+      <span style={{ fontFamily: 'Rajdhani', fontSize: '11px', color: '#606070' }}>{label}: </span>
+      <span style={{ fontFamily: 'JetBrains Mono', fontSize: '12px', fontWeight: 600, color: valueColor ?? '#E8E8F0' }}>
+        {value}
+      </span>
+    </span>
   );
 }

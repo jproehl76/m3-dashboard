@@ -5,6 +5,7 @@ import {
 } from 'recharts';
 import type { LoadedSession, TracePoint } from '@/types/session';
 import { KPH_TO_MPH, M_TO_FEET, BAR_TO_PSI, sessionLabel } from '@/lib/utils';
+import { AXIS_STYLE, GRID_STYLE, TOOLTIP_STYLE, CHANNEL_COLORS } from '@/lib/chartTheme';
 
 interface TraceRow {
   distanceFt: number;
@@ -51,25 +52,27 @@ export function TraceChart({ sessions }: Props) {
 
   if (sessions.length === 0 || !trace || trace.length === 0) {
     return (
-      <p className="text-xs text-slate-600">
+      <p style={{ fontFamily: 'Rajdhani', fontSize: '12px', color: '#606070' }}>
         Throttle/brake trace requires CAN-bus channels (brake_pres, throttle).
       </p>
     );
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4" style={{ touchAction: 'pan-x pan-y', userSelect: 'none' }}>
       {sessions.length > 1 && (
         <div className="flex gap-2 flex-wrap">
           {sessions.map(s => (
             <button
               key={s.id}
               onClick={() => setActiveSessionId(s.id)}
-              className={`text-xs px-2 py-1 rounded border transition-colors ${
-                s.id === activeSessionId
-                  ? 'border-blue-500 text-blue-400 bg-blue-950/30'
-                  : 'border-slate-700 text-slate-500 hover:border-slate-500'
-              }`}
+              className="text-xs px-2 py-1 rounded border transition-colors"
+              style={{
+                fontFamily: 'Rajdhani',
+                borderColor: s.id === activeSessionId ? '#3B82F6' : '#2E2E3C',
+                color: s.id === activeSessionId ? '#3B82F6' : '#606070',
+                background: s.id === activeSessionId ? 'rgba(59,130,246,0.1)' : 'transparent',
+              }}
             >
               {sessionLabel(s)}
             </button>
@@ -79,31 +82,40 @@ export function TraceChart({ sessions }: Props) {
 
       <ResponsiveContainer width="100%" height={320}>
         <ComposedChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 10 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+          <CartesianGrid
+            stroke={GRID_STYLE.stroke}
+            vertical={GRID_STYLE.vertical}
+          />
           <XAxis
             dataKey="distanceFt"
             type="number"
             domain={['auto', 'auto']}
             tickFormatter={(v: number) => `${Math.round(v)}ft`}
-            tick={{ fill: '#64748b', fontSize: 10 }}
-            label={{ value: 'Distance (ft)', position: 'insideBottom', offset: -5, fill: '#64748b', fontSize: 10 }}
+            tick={AXIS_STYLE.tick}
+            axisLine={AXIS_STYLE.axisLine}
+            tickLine={AXIS_STYLE.tickLine}
+            label={{ value: 'Distance (ft)', position: 'insideBottom', offset: -5, fill: '#606070', fontSize: 10, fontFamily: 'JetBrains Mono' }}
           />
           <YAxis
             yAxisId="left"
             domain={[0, 150]}
-            tick={{ fill: '#64748b', fontSize: 10 }}
-            label={{ value: 'Throttle % / Brake PSI', angle: -90, position: 'insideLeft', fill: '#64748b', fontSize: 10 }}
+            tick={AXIS_STYLE.tick}
+            axisLine={AXIS_STYLE.axisLine}
+            tickLine={AXIS_STYLE.tickLine}
+            label={{ value: 'Throttle % / Brake PSI', angle: -90, position: 'insideLeft', fill: '#606070', fontSize: 10, fontFamily: 'JetBrains Mono' }}
           />
           <YAxis
             yAxisId="right"
             orientation="right"
             domain={[0, 'auto']}
             tickFormatter={(v: number) => `${Math.round(v)}`}
-            tick={{ fill: '#64748b', fontSize: 10 }}
-            label={{ value: 'Speed (mph)', angle: 90, position: 'insideRight', fill: '#64748b', fontSize: 10 }}
+            tick={AXIS_STYLE.tick}
+            axisLine={AXIS_STYLE.axisLine}
+            tickLine={AXIS_STYLE.tickLine}
+            label={{ value: 'Speed (mph)', angle: 90, position: 'insideRight', fill: '#606070', fontSize: 10, fontFamily: 'JetBrains Mono' }}
           />
           <Tooltip
-            contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #1e293b', fontSize: 11 }}
+            contentStyle={TOOLTIP_STYLE}
             formatter={(value: number | undefined, name: string | undefined) => {
               if (value === undefined) return String(value);
               if (name === 'speedMph') return [`${value.toFixed(1)} mph`, 'Speed'] as [string, string];
@@ -112,23 +124,23 @@ export function TraceChart({ sessions }: Props) {
               return String(value);
             }}
           />
-          <Legend wrapperStyle={{ fontSize: 11 }} />
+          <Legend wrapperStyle={{ fontFamily: 'Rajdhani', fontSize: 12 }} />
           {brakePoints.map(bp => (
             <ReferenceLine
               key={bp.label}
               yAxisId="left"
               x={bp.distanceFt}
-              stroke="#475569"
+              stroke="#38384A"
               strokeDasharray="4 4"
-              label={{ value: bp.label, position: 'top', fill: '#94a3b8', fontSize: 9 }}
+              label={{ value: bp.label, position: 'top', fill: '#9898A8', fontSize: 9 }}
             />
           ))}
           <Area
             yAxisId="left"
             type="monotone"
             dataKey="throttlePct"
-            stroke="#10b981"
-            fill="#10b981"
+            stroke={CHANNEL_COLORS.throttle}
+            fill={CHANNEL_COLORS.throttle}
             fillOpacity={0.15}
             strokeWidth={1.5}
             dot={false}
@@ -138,7 +150,7 @@ export function TraceChart({ sessions }: Props) {
             yAxisId="left"
             type="monotone"
             dataKey="brakePsi"
-            stroke="#ef4444"
+            stroke={CHANNEL_COLORS.brake}
             strokeWidth={1.5}
             dot={false}
             name="brakePsi"
@@ -147,7 +159,7 @@ export function TraceChart({ sessions }: Props) {
             yAxisId="right"
             type="monotone"
             dataKey="speedMph"
-            stroke="#3b82f6"
+            stroke={CHANNEL_COLORS.speed}
             strokeWidth={1.5}
             dot={false}
             name="speedMph"

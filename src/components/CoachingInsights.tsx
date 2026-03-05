@@ -6,7 +6,8 @@ interface Insight {
   id: string;
   label: string;
   detail: string;
-  borderColor: string;
+  severityColor: string;
+  severityRGB: string;
 }
 
 function buildInsights(session: LoadedSession): Insight[] {
@@ -19,14 +20,16 @@ function buildInsights(session: LoadedSession): Insight[] {
       id: 'consistency',
       label: 'Consistency Crisis',
       detail: `${consistency.spread_s.toFixed(1)}s spread between best and worst lap`,
-      borderColor: '#ef4444',
+      severityColor: '#EF4444',
+      severityRGB: '239,68,68',
     });
   } else if (consistency.spread_s >= 4) {
     insights.push({
       id: 'consistency',
       label: 'Work Needed',
       detail: `${consistency.spread_s.toFixed(1)}s lap time spread`,
-      borderColor: '#f59e0b',
+      severityColor: '#F59E0B',
+      severityRGB: '245,158,11',
     });
   }
 
@@ -41,7 +44,8 @@ function buildInsights(session: LoadedSession): Insight[] {
         id: 'corner-opportunity',
         label: 'Corner Opportunity',
         detail: `${bestCornerName} — ${(bestCorner.min_speed_delta * KPH_TO_MPH).toFixed(1)} mph avg gap vs best lap`,
-        borderColor: '#3b82f6',
+        severityColor: '#3B82F6',
+        severityRGB: '59,130,246',
       });
     }
   }
@@ -53,7 +57,8 @@ function buildInsights(session: LoadedSession): Insight[] {
       id: 'coast-time',
       label: 'Coasting Detected',
       detail: `${coastOffender.coast_time_s.toFixed(2)}s coasting at ${coastOffender.corner_name} — consider earlier throttle`,
-      borderColor: '#f59e0b',
+      severityColor: '#F59E0B',
+      severityRGB: '245,158,11',
     });
   }
 
@@ -67,7 +72,8 @@ function buildInsights(session: LoadedSession): Insight[] {
         id: 'braking',
         label: 'Braking Inconsistency',
         detail: `${worstBrakeName} — ${(worstBrake.brake_point_std_m * M_TO_FEET).toFixed(0)} ft brake point std dev`,
-        borderColor: '#ef4444',
+        severityColor: '#EF4444',
+        severityRGB: '239,68,68',
       });
     }
   }
@@ -86,7 +92,7 @@ export function CoachingInsights({ sessions }: Props) {
   );
 
   if (sessions.length === 0) {
-    return <p className="text-xs text-slate-600">Load a session to see coaching insights.</p>;
+    return <p style={{ fontFamily: 'Rajdhani', fontSize: '12px', color: '#606070' }}>Load a session to see coaching insights.</p>;
   }
 
   return (
@@ -94,21 +100,23 @@ export function CoachingInsights({ sessions }: Props) {
       {insightsBySession.map(({ session, insights }) => (
         <div key={session.id} className="space-y-2">
           {sessions.length > 1 && (
-            <p className="text-xs font-semibold text-slate-400">{sessionLabel(session)}</p>
+            <p style={{ fontFamily: 'Rajdhani', fontSize: '12px', fontWeight: 600, color: '#9898A8' }}>{sessionLabel(session)}</p>
           )}
           {insights.length === 0 ? (
-            <div className="flex items-center gap-2 pl-3 border-l-2 border-emerald-500 text-xs text-emerald-400">
-              No significant issues found — consistent driving.
+            <div className="card p-3 flex items-start gap-3" style={{ borderLeft: '3px solid #22C55E', background: 'rgba(34,197,94,0.04)' }}>
+              <div style={{ fontFamily: 'Rajdhani', fontSize: '13px', fontWeight: 600, color: '#22C55E' }}>
+                No significant issues found — consistent driving.
+              </div>
             </div>
           ) : (
             insights.map(insight => (
               <div
                 key={insight.id}
-                className="pl-3 py-1.5 text-xs space-y-0.5"
-                style={{ borderLeftWidth: 3, borderLeftStyle: 'solid', borderLeftColor: insight.borderColor }}
+                className="card p-3 flex flex-col gap-1"
+                style={{ borderLeft: `3px solid ${insight.severityColor}`, background: `rgba(${insight.severityRGB}, 0.04)` }}
               >
-                <p className="font-semibold text-slate-200">{insight.label}</p>
-                <p className="text-slate-400">{insight.detail}</p>
+                <div style={{ fontFamily: 'Rajdhani', fontSize: '13px', fontWeight: 600, color: '#E8E8F0' }}>{insight.label}</div>
+                <div style={{ fontFamily: 'Rajdhani', fontSize: '11px', color: '#9898A8', marginTop: 2 }}>{insight.detail}</div>
               </div>
             ))
           )}
