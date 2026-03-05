@@ -112,6 +112,12 @@ export function TrackMapChart({ sessions, variant = 'chart', selectedCornerId, o
   }, [refLayout, trace]);
 
   const refPath = useMemo(() => proj && refLayout ? buildRefPath(refLayout.waypoints, proj) : '', [proj, refLayout]);
+  // Bridge section drawn on top to simulate the T1-approach overpass above T11-return
+  const bridgePath = useMemo(() => {
+    if (!proj || !refLayout?.bridgeWaypoints) return '';
+    const pts = refLayout.bridgeWaypoints.map(([lat, lon]) => proj([lon, lat])).filter(Boolean) as [number, number][];
+    return pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ');
+  }, [proj, refLayout]);
 
   const apexes = useMemo(
     () => (proj && session ? computeApexes(trace, session.data.best_lap_corners, proj) : []),
@@ -166,9 +172,17 @@ export function TrackMapChart({ sessions, variant = 'chart', selectedCornerId, o
           {/* Reference track */}
           {refPath && (
             <>
-              <path d={refPath} fill="none" stroke="#1A1A26" strokeWidth={16} strokeLinejoin="round" />
-              <path d={refPath} fill="none" stroke="#101018" strokeWidth={12} strokeLinejoin="round" />
-              <path d={refPath} fill="none" stroke="#252538" strokeWidth={1.5} strokeLinejoin="round" opacity={0.6} />
+              <path d={refPath} fill="none" stroke="#1A1A26" strokeWidth={16} strokeLinejoin="round" strokeLinecap="round" />
+              <path d={refPath} fill="none" stroke="#101018" strokeWidth={12} strokeLinejoin="round" strokeLinecap="round" />
+              <path d={refPath} fill="none" stroke="#252538" strokeWidth={1.5} strokeLinejoin="round" strokeLinecap="round" opacity={0.6} />
+              {/* Bridge overpass — drawn on top so T1-approach appears above T11-return */}
+              {bridgePath && (
+                <>
+                  <path d={bridgePath} fill="none" stroke="#1A1A26" strokeWidth={16} strokeLinecap="round" />
+                  <path d={bridgePath} fill="none" stroke="#141420" strokeWidth={12} strokeLinecap="round" />
+                  <path d={bridgePath} fill="none" stroke="#2E2E44" strokeWidth={1.5} strokeLinecap="round" opacity={0.8} />
+                </>
+              )}
             </>
           )}
 
