@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { useDrag } from '@use-gesture/react';
 import { LogOut, Heart, MapIcon } from 'lucide-react';
 import { LoginScreen } from '@/components/LoginScreen';
 import { Toaster, toast } from 'sonner';
@@ -69,6 +70,25 @@ export default function App() {
 
   useEffect(() => { if (loaded) setActiveTab(memory.lastActiveTab || 'session'); }, [loaded]); // eslint-disable-line
   useEffect(() => { if (loaded) update({ lastActiveTab: activeTab }); }, [activeTab, loaded]); // eslint-disable-line
+
+  // Swipe left/right to navigate tabs on mobile
+  const MOBILE_TAB_IDS = MOBILE_TABS.map(t => t.id);
+  const navigateTab = useCallback((dir: 1 | -1) => {
+    setActiveTab(prev => {
+      const idx = MOBILE_TAB_IDS.indexOf(prev);
+      const next = idx + dir;
+      return next >= 0 && next < MOBILE_TAB_IDS.length ? MOBILE_TAB_IDS[next] : prev;
+    });
+  }, []); // eslint-disable-line
+  const bindSwipe = useDrag(({ swipe: [swipeX] }) => {
+    if (activeTab === 'map') return; // leave map gestures to Leaflet
+    if (swipeX === -1) navigateTab(1);
+    if (swipeX === 1) navigateTab(-1);
+  }, {
+    filterTaps: true,
+    axis: 'x',
+    swipe: { distance: [50, 50], velocity: [0.3, 0.3] },
+  });
 
   useEffect(() => {
     if (!loaded) return;
@@ -312,8 +332,10 @@ export default function App() {
           </div>
         </aside>
 
-        {/* Right panel */}
-        <div className="flex flex-col flex-1 min-w-0 min-h-0 bg-background">
+        {/* Right panel — touch-action: pan-y lets useDrag capture horizontal swipes
+            while the browser handles vertical scrolling natively */}
+        <div className="flex flex-col flex-1 min-w-0 min-h-0 bg-background"
+          {...bindSwipe()} style={{ touchAction: 'pan-y' }}>
           {store.activeSessions.length > 0 ? (
             <div className="flex flex-col flex-1 min-h-0">
               {/* Mobile-only compact session loading strip */}
@@ -384,7 +406,7 @@ export default function App() {
           const active = activeTab === tab.id;
           return (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-              className="flex flex-col items-center justify-center gap-0.5 flex-1 h-full transition-colors"
+              className="flex flex-col items-center justify-center gap-0.5 flex-1 h-full transition-all duration-100 active:scale-[0.90] active:opacity-70 select-none"
               style={{
                 color: active ? '#1C69D4' : 'hsl(var(--muted-foreground))',
                 borderTop: active ? '2px solid #1C69D4' : '2px solid transparent',

@@ -79,19 +79,19 @@ export function SessionList({ sessions, activeIds, onToggle, onRemove, onRename,
               )}
 
               <button onClick={() => isEditing ? commitEdit(session.id) : startEdit(session)}
-                className="shrink-0 text-muted-foreground/40 hover:text-muted-foreground transition-colors"
+                className="shrink-0 p-2 -m-1 rounded text-muted-foreground/40 hover:text-muted-foreground active:opacity-60 transition-all"
                 title={isEditing ? 'Save name' : 'Rename session'}>
                 {isEditing ? <Check size={12} /> : <Pencil size={12} />}
               </button>
 
               <button onClick={() => onToggle(session.id)}
-                className="shrink-0 text-muted-foreground/40 hover:text-muted-foreground transition-colors"
+                className="shrink-0 p-2 -m-1 rounded text-muted-foreground/40 hover:text-muted-foreground active:opacity-60 transition-all"
                 title={isActive ? 'Hide session' : 'Show session'}>
                 {isActive ? <Eye size={12} /> : <EyeOff size={12} />}
               </button>
 
               <button onClick={() => onRemove(session.id)}
-                className="shrink-0 text-muted-foreground/40 hover:text-destructive transition-colors"
+                className="shrink-0 p-2 -m-1 rounded text-muted-foreground/40 hover:text-destructive active:opacity-60 transition-all"
                 title="Remove session">
                 <X size={12} />
               </button>
