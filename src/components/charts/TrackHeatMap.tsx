@@ -289,7 +289,7 @@ function CoachingPanel({
   const sel = coaching.find(c => c.id === selectedId) ?? null;
 
   return (
-    <div className="flex flex-col h-full border-l border-border bg-card/40" style={{ width: 280, minWidth: 280 }}>
+    <div className="flex flex-col h-full border-l border-border bg-card/40" style={{ width: '28%', minWidth: 200, maxWidth: 320 }}>
       <div className="shrink-0 px-3 py-2 border-b border-border">
         <div style={{ fontFamily: FF.sans, fontSize: `${FS.nano}px`, letterSpacing: '0.15em', textTransform: 'uppercase', color: T.muted }}>
           Corner Coaching

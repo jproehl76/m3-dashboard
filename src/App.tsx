@@ -461,7 +461,7 @@ export default function App() {
           </Panel>
 
           {/* Drag handle */}
-          <PanelResizeHandle className="w-1 bg-border hover:bg-primary/40 active:bg-primary/60 transition-colors cursor-col-resize" />
+          <PanelResizeHandle className="w-1.5 bg-border hover:bg-primary/50 active:bg-primary/70 transition-colors cursor-col-resize" />
 
           {/* Right content panel */}
           <Panel id="main" className="flex flex-col min-w-0">

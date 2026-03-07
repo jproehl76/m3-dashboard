@@ -12,7 +12,7 @@
  *   - Heat coloring: higher total-G = brighter / greener
  *   - Multi-session: each session tinted to its session color
  */
-import { useRef, useEffect, useMemo } from 'react';
+import { useRef, useEffect, useCallback, useMemo } from 'react';
 import * as d3 from 'd3';
 import type { LoadedSession, FrictionScatterPoint } from '@/types/session';
 import { sessionLabel } from '@/lib/utils';
@@ -46,7 +46,7 @@ export function FrictionScatterChart({ sessions }: Props) {
 
   const hasData = seriesData.some(s => s.points.length > 0);
 
-  useEffect(() => {
+  const draw = useCallback(() => {
     const canvas = canvasRef.current;
     const container = containerRef.current;
     if (!canvas || !container || !hasData) return;
@@ -141,7 +141,17 @@ export function FrictionScatterChart({ sessions }: Props) {
     ctx.lineWidth   = 1;
     ctx.strokeRect(PAD, PAD, W - 2 * PAD, H - 2 * PAD);
 
-  }, [seriesData, hasData]);
+  }, [seriesData, hasData]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Draw on data change AND on container resize
+  useEffect(() => {
+    draw();
+    const container = containerRef.current;
+    if (!container) return;
+    const ro = new ResizeObserver(draw);
+    ro.observe(container);
+    return () => ro.disconnect();
+  }, [draw]);
 
   if (!hasData) {
     return (
