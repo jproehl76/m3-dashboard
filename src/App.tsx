@@ -107,10 +107,6 @@ export default function App() {
 
   if (!user) return <LoginScreen onAuth={setUser} />;
 
-  const bestSession = store.activeSessions.length > 0
-    ? store.activeSessions.reduce((b, s) => s.data.consistency.best_lap_s < b.data.consistency.best_lap_s ? s : b)
-    : null;
-  const bestLapDisplay = bestSession ? formatLapTime(bestSession.data.consistency.best_lap_s) : null;
   const sessionDates = store.activeSessions.map(s => s.data.header.date);
 
   // Track branding for header
@@ -242,33 +238,7 @@ export default function App() {
             }}
           />
 
-          {/* Best lap — centered */}
-          {bestLapDisplay && (
-            <div className="hidden md:flex flex-col items-center absolute left-1/2 -translate-x-1/2">
-              <span style={{
-                fontFamily: 'JetBrains Mono',
-                fontSize: 'clamp(22px, 4.2vh, 38px)',
-                fontWeight: 600,
-                color: '#A855F7',
-                lineHeight: 1,
-                textShadow: '0 0 28px rgba(168,85,247,0.6)',
-              }}>
-                {bestLapDisplay}
-              </span>
-              <span style={{
-                fontFamily: 'BMWTypeNext',
-                fontSize: 'clamp(9px, 1.08vh, 11px)',
-                letterSpacing: '0.25em',
-                color: 'hsl(var(--muted-foreground))',
-                textTransform: 'uppercase',
-                marginTop: 2,
-              }}>
-                Best Lap
-              </span>
-            </div>
-          )}
-
-          {/* Right: track logo (when session loaded) + avatar + sign out */}
+{/* Right: track logo (when session loaded) + avatar + sign out */}
           <div className="flex items-center gap-3 ml-auto shrink-0">
             {trackLogo && (
               <img src={trackLogo} alt={activeTrackLayout?.name}

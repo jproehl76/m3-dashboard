@@ -2,6 +2,14 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Phase 1: Safe area custom properties ────────────────────────────────── */
+:root {
+  --sat: env(safe-area-inset-top);
+  --sar: env(safe-area-inset-right);
+  --sab: env(safe-area-inset-bottom);
+  --sal: env(safe-area-inset-left);
+}
+
 
 /* ── BMW TypeNext Latin ──────────────────────────────────────────────────── */
 @font-face {
@@ -59,6 +67,12 @@
     -webkit-tap-highlight-color: transparent;
   }
 
+  html {
+    /* Prevent iOS font size inflation when rotating to landscape */
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
   html, body, #root {
     height: 100%;
     background: #0A0A12;
@@ -69,6 +83,20 @@
     font-family: 'BMWTypeNext', 'Barlow Condensed', system-ui, sans-serif;
     font-size: 14px;
     color: #E8E8F0;
+    /* Contain overscroll — no browser pull-to-refresh */
+    overscroll-behavior-y: contain;
+  }
+
+  /* Suppress non-native callout on nav/interactive chrome */
+  nav, [role="tablist"], [role="tab"] {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  /* Keep user-select on content — users need to copy lap times / data */
+  p, span, td, th, [data-content] {
+    user-select: text;
   }
 
   ::-webkit-scrollbar { width: 4px; height: 4px; }

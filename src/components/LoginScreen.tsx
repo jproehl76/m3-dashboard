@@ -44,9 +44,6 @@ export function LoginScreen({ onAuth }: LoginScreenProps) {
           alt="JP Apex Lab"
           style={{ height: 160, width: 'auto' }}
         />
-        <div className="text-center">
-          <p className="text-slate-400 mt-1 text-sm">{config.carName}</p>
-        </div>
         <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-8 flex flex-col items-center gap-4 w-full max-w-sm">
           <p className="text-sm text-slate-400">Sign in to access your data</p>
           <GoogleLogin
