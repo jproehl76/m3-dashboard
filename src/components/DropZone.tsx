@@ -6,9 +6,10 @@ import { parseRacechronoCsv } from '@/lib/parseRacechronoCsv';
 
 interface DropZoneProps {
   onSessionLoaded: (filename: string, data: SessionSummary) => { ok: boolean; error?: string };
+  compact?: boolean;
 }
 
-export function DropZone({ onSessionLoaded }: DropZoneProps) {
+export function DropZone({ onSessionLoaded, compact = false }: DropZoneProps) {
   const [isDragging, setIsDragging] = useState(false);
 
   const processFile = useCallback((file: File) => {
@@ -58,6 +59,27 @@ export function DropZone({ onSessionLoaded }: DropZoneProps) {
     Array.from(e.target.files ?? []).forEach(processFile);
     e.target.value = '';
   }, [processFile]);
+
+  if (compact) {
+    return (
+      <label
+        className="relative rounded-lg border border-dashed flex items-center justify-center gap-2 px-3 py-2 transition-all duration-200 cursor-pointer"
+        style={{
+          borderColor: isDragging ? '#3B82F6' : '#2E2E3C',
+          background: isDragging ? 'rgba(59,130,246,0.08)' : 'rgba(26,26,34,0.6)',
+        }}
+        onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+        onDragLeave={() => setIsDragging(false)}
+        onDrop={onDrop}
+      >
+        <input type="file" accept=".json,.csv" multiple className="sr-only" onChange={onInputChange} />
+        <Upload size={14} style={{ color: isDragging ? '#3B82F6' : '#9A9AB0' }} />
+        <span style={{ fontFamily: 'BMWTypeNext', fontSize: '11px', color: '#9A9AB0', whiteSpace: 'nowrap' }}>
+          {isDragging ? 'Drop here' : 'Add Session'}
+        </span>
+      </label>
+    );
+  }
 
   return (
     <label

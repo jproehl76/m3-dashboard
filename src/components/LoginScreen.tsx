@@ -1,9 +1,8 @@
 import { useGoogleOneTapLogin, GoogleLogin } from '@react-oauth/google';
 import { jwtDecode } from 'jwt-decode';
-import bmwMLogo from '@/assets/bmw-m-logo.jpg';
-import trackPhoto from '@/assets/m3-track.jpg';
-
-const ALLOWED_EMAIL = 'jonathan.proehl@gmail.com';
+import apexLabLogo from '@/assets/jp-apex-lab-logo.png';
+import trackPhoto from '@/assets/track-background.jpg';
+import { config } from '@/config';
 
 interface GoogleJwt {
   email: string;
@@ -17,7 +16,7 @@ interface LoginScreenProps {
 
 function handleCredential(credential: string, onAuth: LoginScreenProps['onAuth']) {
   const decoded = jwtDecode<GoogleJwt>(credential);
-  if (decoded.email !== ALLOWED_EMAIL) return;
+  if (decoded.email !== config.ownerEmail) return;
   onAuth({ email: decoded.email, name: decoded.name, picture: decoded.picture });
 }
 
@@ -41,14 +40,12 @@ export function LoginScreen({ onAuth }: LoginScreenProps) {
       />
       <div className="relative z-10 flex flex-col items-center gap-8 px-6">
         <img
-          src={bmwMLogo}
-          alt="BMW M"
-          className="h-32 w-32"
-          style={{ mixBlendMode: 'screen' }}
+          src={apexLabLogo}
+          alt="JP Apex Lab"
+          style={{ height: 160, width: 'auto' }}
         />
         <div className="text-center">
-          <h1 className="text-2xl font-bold tracking-tight">M3 Session Dashboard</h1>
-          <p className="text-slate-400 mt-1 text-sm">2025 BMW G80 M3 Competition xDrive</p>
+          <p className="text-slate-400 mt-1 text-sm">{config.carName}</p>
         </div>
         <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-8 flex flex-col items-center gap-4 w-full max-w-sm">
           <p className="text-sm text-slate-400">Sign in to access your data</p>

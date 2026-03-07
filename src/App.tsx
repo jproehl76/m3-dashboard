@@ -19,7 +19,10 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { ReadinessTab } from '@/components/ReadinessTab';
 import { WeatherWidget } from '@/components/WeatherWidget';
 import { InstallPrompt } from '@/components/InstallPrompt';
+import apexLabLogo from '@/assets/jp-apex-lab-logo.png';
 import { handleWhoopCallback } from '@/lib/services/whoopAuth';
+import { handleStravaCallback } from '@/lib/services/stravaAuth';
+import { config } from '@/config';
 import { usePersistedSessions } from '@/lib/usePersistedSessions';
 import { sessionLabel, formatLapTime } from '@/lib/utils';
 import { useMemory } from '@/hooks/useMemory';
@@ -58,7 +61,7 @@ export default function App() {
   const { memory, loaded, update } = useMemory();
   const [activeTab, setActiveTab] = useState('session');
   const [selectedCornerId, setSelectedCornerId] = useState<string | null>(null);
-  const [whoopConnected, setWhoopConnected] = useState(false);
+  const [healthConnected, setHealthConnected] = useState(false);
   const [user, setUser] = useState<AuthUser | null>(() => {
     try { const r = localStorage.getItem(AUTH_KEY); return r ? JSON.parse(r) : null; }
     catch { return null; }
@@ -83,10 +86,17 @@ export default function App() {
     const code = p.get('code'), state = p.get('state');
     if (code && state) {
       window.history.replaceState({}, '', window.location.pathname);
-      handleWhoopCallback(code, state).then(ok => {
-        if (ok) { setWhoopConnected(true); toast.success('WHOOP connected'); }
-        else toast.error('WHOOP connection failed');
-      }).catch(() => toast.error('WHOOP connection failed'));
+      if (config.healthProvider === 'strava') {
+        handleStravaCallback(code, state).then(ok => {
+          if (ok) { setHealthConnected(true); toast.success('Strava connected'); }
+          else toast.error('Strava connection failed');
+        }).catch(() => toast.error('Strava connection failed'));
+      } else {
+        handleWhoopCallback(code, state).then(ok => {
+          if (ok) { setHealthConnected(true); toast.success('WHOOP connected'); }
+          else toast.error('WHOOP connection failed');
+        }).catch(() => toast.error('WHOOP connection failed'));
+      }
     }
   }, []);
 
@@ -105,8 +115,8 @@ export default function App() {
 
   // Track branding for header
   const activeTrackLayout = findTrackLayout(store.activeSessions[0]?.data.header.track);
-  const trackPrimary = activeTrackLayout?.colors.primary ?? '#1C69D4';
-  const trackAccent  = activeTrackLayout?.colors.accent  ?? '#A855F7';
+  const trackPrimary = activeTrackLayout?.colors.primary ?? config.defaultPrimaryColor;
+  const trackAccent  = activeTrackLayout?.colors.accent  ?? config.defaultAccentColor;
   const trackLogo    = activeTrackLayout?.logo;
 
   function renderTabContent(tab: string) {
@@ -162,9 +172,11 @@ export default function App() {
             <ErrorBoundary><ThermalChart sessions={store.activeSessions} /></ErrorBoundary>
           </Section>
           {/* ReadinessTab handles connect state + renders WhoopPanel when connected */}
-          <Section title="Driver Readiness &amp; WHOOP">
-            <ErrorBoundary><ReadinessTab sessionDates={sessionDates} connectedOverride={whoopConnected} /></ErrorBoundary>
-          </Section>
+          {config.healthProvider !== null && (
+            <Section title="Driver Readiness">
+              <ErrorBoundary><ReadinessTab sessionDates={sessionDates} connectedOverride={healthConnected} /></ErrorBoundary>
+            </Section>
+          )}
         </div>
       );
       case 'notes': return (
@@ -188,7 +200,12 @@ export default function App() {
       <Toaster position="bottom-right" richColors />
 
       {/* ── HEADER ── */}
-      <header className="relative shrink-0 overflow-hidden" style={{ height: 'clamp(72px, 13.2vh, 144px)' }}>
+      <header className="relative shrink-0 overflow-hidden" style={{
+        height: 'calc(clamp(72px, 13.2vh, 144px) + env(safe-area-inset-top))',
+        paddingTop: 'env(safe-area-inset-top)',
+        paddingLeft: 'env(safe-area-inset-left)',
+        paddingRight: 'env(safe-area-inset-right)',
+      }}>
         {/* CSS motorsport background — adapts to track colors */}
         <div className="absolute inset-0" style={{
           background: `
@@ -213,47 +230,17 @@ export default function App() {
         }} />
 
         <div className="relative z-10 flex items-center h-full px-4 gap-3">
-          {/* BMW M stripes */}
-          <div className="shrink-0 flex items-center gap-[3px]" style={{ height: 'clamp(29px, 5.4vh, 50px)' }}>
-            {[
-              { color: '#1C69D4', shadow: '#1C69D460' },
-              { color: '#6B2D9E', shadow: '#6B2D9E60' },
-              { color: '#EF3340', shadow: '#EF334060' },
-            ].map((stripe, i) => (
-              <div key={i} style={{
-                width: 'clamp(5px, 0.84vh, 8px)',
-                height: '100%',
-                background: stripe.color,
-                borderRadius: '1px',
-                boxShadow: `0 0 8px ${stripe.shadow}`,
-              }} />
-            ))}
-          </div>
-
-          {/* Title */}
-          <div className="flex flex-col justify-center min-w-0">
-            <h1 style={{
-              fontFamily: 'BMWTypeNext',
-              fontSize: 'clamp(17px, 3vh, 31px)',
-              fontWeight: 700,
-              letterSpacing: '0.08em',
-              color: '#F0F0FA',
-              lineHeight: 1,
-              textTransform: 'uppercase',
-            }}>
-              Jonathan Proehl
-            </h1>
-            <p className="hidden sm:block" style={{
-              fontFamily: 'BMWTypeNext',
-              fontSize: 'clamp(9px, 1.32vh, 12px)',
-              letterSpacing: '0.22em',
-              color: 'hsl(var(--muted-foreground))',
-              textTransform: 'uppercase',
-              marginTop: 2,
-            }}>
-              Track Telemetry · Session Analysis
-            </p>
-          </div>
+          {/* App logo */}
+          <img
+            src={apexLabLogo}
+            alt="JP Apex Lab"
+            style={{
+              height: 'clamp(44px, 8vh, 80px)',
+              width: 'auto',
+              objectFit: 'contain',
+              flexShrink: 0,
+            }}
+          />
 
           {/* Best lap — centered */}
           {bestLapDisplay && (
@@ -359,6 +346,15 @@ export default function App() {
         <div className="flex flex-col flex-1 min-w-0 min-h-0 bg-background">
           {store.activeSessions.length > 0 ? (
             <div className="flex flex-col flex-1 min-h-0">
+              {/* Mobile-only compact session loading strip */}
+              <div className="lg:hidden shrink-0 p-2 border-b border-border bg-card/60">
+                <div className="flex gap-2">
+                  <div className="flex-1 min-w-0">
+                    <DropZone compact onSessionLoaded={store.addSession} />
+                  </div>
+                  <DrivePickerButton onSessionLoaded={store.addSession} />
+                </div>
+              </div>
               {/* Desktop tab strip */}
               <div className="hidden lg:flex shrink-0 border-b border-border bg-card/60 px-3 items-center gap-1">
                 {DESKTOP_TABS.map(tab => (
@@ -394,6 +390,11 @@ export default function App() {
             </div>
           ) : (
             <main className="flex-1 overflow-y-auto scroll-touch p-4">
+              {/* Mobile session loading controls — desktop uses the left sidebar */}
+              <div className="lg:hidden mb-4 space-y-2">
+                <DropZone onSessionLoaded={store.addSession} />
+                <DrivePickerButton onSessionLoaded={store.addSession} />
+              </div>
               <EmptyDashboard />
             </main>
           )}
@@ -507,7 +508,7 @@ function EmptyDashboard() {
     <div className="flex flex-col items-center justify-center h-full gap-4 p-8 text-center min-h-[300px]">
       {/* M stripes as empty state decoration */}
       <div className="flex items-center gap-[4px]" style={{ height: 48, opacity: 0.12 }}>
-        {['#1C69D4', '#6B2D9E', '#EF3340'].map((c, i) => (
+        {config.stripeColors.map((c, i) => (
           <div key={i} style={{ width: 8, height: '100%', background: c, borderRadius: 1 }} />
         ))}
       </div>

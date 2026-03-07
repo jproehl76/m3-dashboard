@@ -1,5 +1,8 @@
+import { config } from '@/config';
 import { isWhoopConnected, initiateWhoopAuth } from '@/lib/services/whoopAuth';
 import { WhoopPanel } from '@/components/WhoopPanel';
+import { OuraPanel } from '@/components/OuraPanel';
+import { StravaPanel } from '@/components/StravaPanel';
 import { Activity } from 'lucide-react';
 
 interface Props {
@@ -8,6 +11,23 @@ interface Props {
 }
 
 export function ReadinessTab({ sessionDates, connectedOverride }: Props) {
+  if (config.healthProvider === 'oura') {
+    return (
+      <div className="space-y-4">
+        <OuraPanel sessionDates={sessionDates} />
+      </div>
+    );
+  }
+
+  if (config.healthProvider === 'strava') {
+    return (
+      <div className="space-y-4">
+        <StravaPanel sessionDates={sessionDates} connectedOverride={connectedOverride} />
+      </div>
+    );
+  }
+
+  // WHOOP
   const connected = isWhoopConnected() || !!connectedOverride;
 
   if (!connected) {

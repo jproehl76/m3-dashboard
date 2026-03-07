@@ -1,7 +1,7 @@
 {
-  "name": "M3 Telemetry",
-  "short_name": "M3",
-  "description": "G80 M3 Competition track telemetry dashboard",
+  "name": "JP Apex Lab",
+  "short_name": "Apex Lab",
+  "description": "Track telemetry and session analysis dashboard",
   "start_url": "/m3-dashboard/",
   "scope": "/m3-dashboard/",
   "display": "standalone",
