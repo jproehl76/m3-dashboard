@@ -1,7 +1,6 @@
 import { config } from '@/config';
 
 const WHOOP_CLIENT_ID = import.meta.env.VITE_WHOOP_CLIENT_ID as string;
-const WHOOP_CLIENT_SECRET = import.meta.env.VITE_WHOOP_CLIENT_SECRET as string;
 const REDIRECT_URI = window.location.origin + import.meta.env.BASE_URL;
 const AUTH_URL = 'https://api.prod.whoop.com/oauth/oauth2/auth';
 const TOKEN_URL = config.whoopWorkerUrl;
@@ -62,20 +61,11 @@ export async function handleWhoopCallback(code: string, state: string): Promise<
     return false;
   }
 
-  const body = new URLSearchParams({
-    grant_type: 'authorization_code',
-    code,
-    client_id: WHOOP_CLIENT_ID,
-    client_secret: WHOOP_CLIENT_SECRET,
-    redirect_uri: REDIRECT_URI,
-    scope: SCOPES,
-  });
-
   try {
-    const response = await fetch(TOKEN_URL, {
+    const response = await fetch(`${TOKEN_URL}/whoop/token`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: body.toString(),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code, redirect_uri: REDIRECT_URI }),
     });
 
     if (!response.ok) {
@@ -100,19 +90,11 @@ export async function refreshWhoopToken(): Promise<boolean> {
   const tokens = loadTokens();
   if (!tokens?.refresh_token) return false;
 
-  const body = new URLSearchParams({
-    grant_type: 'refresh_token',
-    refresh_token: tokens.refresh_token,
-    client_id: WHOOP_CLIENT_ID,
-    client_secret: WHOOP_CLIENT_SECRET,
-    scope: SCOPES,
-  });
-
   try {
-    const response = await fetch(TOKEN_URL, {
+    const response = await fetch(`${TOKEN_URL}/whoop/refresh`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: body.toString(),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh_token: tokens.refresh_token }),
     });
 
     if (!response.ok) {
