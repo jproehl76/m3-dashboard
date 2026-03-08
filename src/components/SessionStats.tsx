@@ -30,8 +30,8 @@ export function SessionStats({ sessions }: Props) {
               </p>
             )}
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-              {/* Best lap — special purple card */}
-              <div className="card p-4 col-span-2 sm:col-span-1" style={{ borderColor: 'rgba(168,85,247,0.3)', background: 'rgba(168,85,247,0.06)' }}>
+              {/* Best lap — hidden on desktop where LapInfoPanel already shows it */}
+              <div className="card p-4 col-span-2 sm:col-span-1 lg:hidden" style={{ borderColor: 'rgba(168,85,247,0.3)', background: 'rgba(168,85,247,0.06)' }}>
                 <div className="flex items-center gap-1.5 mb-2">
                   <div className="w-0.5 h-3 rounded-full" style={{ background: '#A855F7' }} />
                   <span style={{ fontFamily: 'BMWTypeNext', fontSize: '10px', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#705080' }}>Best Lap</span>
