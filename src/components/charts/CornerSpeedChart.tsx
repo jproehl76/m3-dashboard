@@ -4,7 +4,7 @@ import {
 } from 'recharts';
 import type { LoadedSession } from '@/types/session';
 import { kphToMph, sessionLabel } from '@/lib/utils';
-import { CHART_MARGINS, AXIS_STYLE, GRID_STYLE, TOOLTIP_STYLE, TOOLTIP_HEADER_STYLE, LEGEND_LABEL_STYLE, SESSION_COLORS, T, FF, FS, S, axisLabel } from '@/lib/chartTheme';
+import { CHART_MARGINS, CHART_MARGINS_MOBILE, AXIS_STYLE, GRID_STYLE, TOOLTIP_STYLE, TOOLTIP_HEADER_STYLE, LEGEND_LABEL_STYLE, SESSION_COLORS, T, FF, FS, S, axisLabel } from '@/lib/chartTheme';
 
 interface Props {
   sessions: LoadedSession[];
@@ -72,6 +72,7 @@ export function CornerSpeedChart({ sessions }: Props) {
     );
   }
 
+  const isMobile = window.innerWidth < 1024;
   const data = buildChartData(sessions);
 
   // Global min/max for heat coloring
@@ -110,7 +111,7 @@ export function CornerSpeedChart({ sessions }: Props) {
 
       {/* Apex speed bar chart */}
       <ResponsiveContainer width="100%" height={320}>
-        <BarChart data={data} margin={CHART_MARGINS} barCategoryGap="28%">
+        <BarChart data={data} margin={isMobile ? CHART_MARGINS_MOBILE : CHART_MARGINS} barCategoryGap="28%">
           <CartesianGrid stroke={GRID_STYLE.stroke} vertical={false} />
           <XAxis dataKey="label" tick={AXIS_STYLE.tick} axisLine={AXIS_STYLE.axisLine} tickLine={AXIS_STYLE.tickLine} />
           <YAxis
@@ -119,6 +120,7 @@ export function CornerSpeedChart({ sessions }: Props) {
             tickLine={AXIS_STYLE.tickLine}
             label={axisLabel('MPH', 'insideLeft')}
             domain={['auto', 'auto']}
+            width={isMobile ? 36 : 48}
           />
           <Tooltip content={<CustomTooltip sessions={sessions} />} />
           {sessions.map((session, si) => (
